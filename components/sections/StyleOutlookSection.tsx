@@ -3,12 +3,11 @@
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
-// High-quality native MP4 stock videos from Mixkit (Trusted provider)
-const VIDEOS = [
-  { url: "https://assets.mixkit.co/videos/preview/mixkit-urban-fashion-video-of-a-man-with-a-red-cap-34138-large.mp4", category: "SOFTWEAR" }, // Left large
-  { url: "https://assets.mixkit.co/videos/preview/mixkit-shoes-of-a-skateboarder-doing-tricks-41686-large.mp4", category: "SKENA CORE" }, // Right top
-  { url: "https://assets.mixkit.co/videos/preview/mixkit-man-training-on-the-stairs-of-a-stadium-14282-large.mp4", category: "ACTIVEWEAR" }  // Right bottom
-];
+import SectionLabel from "../ui/SectionLabel";
+import PillButton from "../ui/PillButton";
+import VideoCard from "../ui/VideoCard";
+import { STYLE_VIDEOS } from "../data/videos";
+import { STYLE_PILLS } from "../data/navigation";
 
 export default function StyleOutlookSection() {
   const containerRef = useRef<HTMLElement>(null);
@@ -17,29 +16,33 @@ export default function StyleOutlookSection() {
   // Setup parallax scroll values
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
   });
 
   // Left column moves slightly faster/differently than right column
   const leftColumnY = useTransform(scrollYProgress, [0, 1], [100, -100]);
   const rightColumnY = useTransform(scrollYProgress, [0, 1], [-50, 150]);
 
-  const pills = ["Classic", "Everyday", "Soft", "Foundation", "Active", "Essential"];
-
   return (
-    <section 
-      ref={containerRef} 
+    <section
+      ref={containerRef}
       className="style-outlook-section"
-      style={{ backgroundColor: "#0a0a0a", color: "#ffffff", padding: "8vw 3rem 5vw", position: "relative", overflow: "hidden" }}
+      style={{
+        backgroundColor: "#0a0a0a",
+        color: "#ffffff",
+        padding: "8vw 3rem 5vw",
+        position: "relative",
+        overflow: "hidden",
+      }}
     >
       {/* Header Row */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4vw" }}>
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "1.2rem", fontWeight: 500, opacity: 0.8 }}>/04</span>
+          <SectionLabel number="04" color="rgba(255,255,255,0.8)" />
         </div>
-        
+
         <div style={{ flex: 2, textAlign: "center" }}>
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -65,75 +68,43 @@ export default function StyleOutlookSection() {
 
       {/* Parallax Bento Grid */}
       <div className="bento-grid-container">
-        
         {/* Left Column (Large) */}
         <motion.div className="bento-col-left" style={{ y: leftColumnY }}>
-          <div className="bento-card large-card">
-            <video 
-              src={VIDEOS[0].url}
-              autoPlay 
-              loop 
-              muted 
-              playsInline
-              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
-            />
-          </div>
-          <p className="bento-category">{VIDEOS[0].category}</p>
+          <VideoCard src={STYLE_VIDEOS[0].url} className="large-card" />
+          <p className="bento-category">{STYLE_VIDEOS[0].category}</p>
         </motion.div>
 
         {/* Right Column (Stacked) */}
         <motion.div className="bento-col-right" style={{ y: rightColumnY }}>
-          
           <div className="bento-item">
-            <div className="bento-card small-card">
-              <video 
-                src={VIDEOS[1].url}
-                autoPlay 
-                loop 
-                muted 
-                playsInline
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
-              />
-            </div>
-            <p className="bento-category right-align">{VIDEOS[1].category}</p>
+            <VideoCard src={STYLE_VIDEOS[1].url} className="small-card" />
+            <p className="bento-category right-align">{STYLE_VIDEOS[1].category}</p>
           </div>
 
           <div className="bento-item">
-            <div className="bento-card small-card">
-              <video 
-                src={VIDEOS[2].url}
-                autoPlay 
-                loop 
-                muted 
-                playsInline
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
-              />
-            </div>
-            <p className="bento-category right-align">{VIDEOS[2].category}</p>
+            <VideoCard src={STYLE_VIDEOS[2].url} className="small-card" />
+            <p className="bento-category right-align">{STYLE_VIDEOS[2].category}</p>
           </div>
-
         </motion.div>
       </div>
 
       {/* Navigation Pills */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, delay: 0.4 }}
         className="pill-nav-container"
       >
-        {pills.map((pill) => (
-          <button
+        {STYLE_PILLS.map((pill) => (
+          <PillButton
             key={pill}
+            label={pill}
+            active={activePill === pill}
             onClick={() => setActivePill(pill)}
-            className={`pill-btn ${activePill === pill ? 'active' : ''}`}
-          >
-            {pill}
-          </button>
+          />
         ))}
       </motion.div>
-
     </section>
   );
 }

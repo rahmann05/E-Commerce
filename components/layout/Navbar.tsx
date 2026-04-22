@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -36,13 +37,13 @@ export default function Navbar() {
     >
       <div className="main-navbar">
         <div style={{ display: "flex", gap: "2.5rem" }}>
-          <a href="#">Male</a>
-          <a href="/about">About Us</a>
+          <Link href="#">Male</Link>
+          <Link href="/about">About Us</Link>
         </div>
-        <a href="#" className="brand">Novure</a>
+        <Link href="#" className="brand">Novure</Link>
         <div style={{ display: "flex", gap: "2.5rem" }}>
-          <a href="#">Wishlist</a>
-          <a href="#">My Cart</a>
+          <Link href="#">Wishlist</Link>
+          <Link href="#">My Cart</Link>
         </div>
       </div>
     </motion.nav>

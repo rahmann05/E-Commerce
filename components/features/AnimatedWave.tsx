@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useColorTheme } from "./ColorContext";
+import { useColorTheme } from "../providers/ColorContext";
 import { useMemo } from "react";
 
 export default function AnimatedWave() {

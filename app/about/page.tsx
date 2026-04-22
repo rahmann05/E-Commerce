@@ -2,44 +2,13 @@
 
 import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useState } from "react";
+import Link from "next/link";
 
-const TEAM = [
-  {
-    name: "Fifin Agustiana",
-    role: "Creative Director & Co-Founder",
-    bio: "A visionary in modern fashion aesthetics, Fifin brings an eye for minimalist elegance and textile innovation that defines every Novure piece.",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&crop=face",
-    accent: "#9b51e0",
-  },
-  {
-    name: "I Gede Bayu Pamungkas",
-    role: "Chief Executive Officer",
-    bio: "With a strategic mind and passion for disrupting fast fashion, Bayu drives Novure's mission to make premium essentials accessible to everyone.",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-    accent: "#ff8c00",
-  },
-  {
-    name: "Zilal Afwu Rahman",
-    role: "Head of Product Design",
-    bio: "Zilal is the architect behind Novure's signature silhouettes. Every cut, stitch, and drape is meticulously crafted under his watchful design philosophy.",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face",
-    accent: "#27ae60",
-  },
-  {
-    name: "Safdar Rahman",
-    role: "Chief Technology Officer",
-    bio: "Safdar bridges the gap between fashion and technology, building the digital infrastructure that powers Novure's seamless e-commerce experience.",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-    accent: "#e05177",
-  },
-];
-
-const VALUES = [
-  { icon: "✦", title: "Craftsmanship", desc: "Every piece is engineered with precision — from the first thread to the final press." },
-  { icon: "◆", title: "Sustainability", desc: "Conscious production meets modern design, built to last beyond a single season." },
-  { icon: "●", title: "Innovation", desc: "We push boundaries in fabric technology, fit science, and the way you shop." },
-  { icon: "▲", title: "Community", desc: "Novure isn't a brand — it's a culture of people who refuse to settle for ordinary." },
-];
+const MotionLink = motion.create(Link);
+import { TEAM, VALUES } from "../../components/data/team";
+import GlowOrb from "../../components/ui/GlowOrb";
+import ScrollIndicator from "../../components/ui/ScrollIndicator";
+import SectionLabel from "../../components/ui/SectionLabel";
 
 function TeamCard({ member, index }: { member: typeof TEAM[0]; index: number }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -156,18 +125,8 @@ export default function AboutPage() {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.5) 50%, #0a0a0a 100%)" }} />
 
         {/* Animated floating orbs - matching landing page */}
-        <motion.div
-          animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0], scale: [1, 1.3, 0.9, 1] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          style={{ position: "absolute", top: "20%", left: "15%", width: 300, height: 300, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(155,81,224,0.2), transparent 70%)", filter: "blur(50px)", pointerEvents: "none" }}
-        />
-        <motion.div
-          animate={{ x: [0, -25, 30, 0], y: [0, 20, -30, 0], scale: [1, 0.8, 1.2, 1] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-          style={{ position: "absolute", bottom: "25%", right: "15%", width: 350, height: 350, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,140,0,0.15), transparent 70%)", filter: "blur(60px)", pointerEvents: "none" }}
-        />
+        <GlowOrb color="rgba(155,81,224,0.2)" size={300} top="20%" left="15%" duration={12} blur={50} />
+        <GlowOrb color="rgba(255,140,0,0.15)" size={350} bottom="25%" right="15%" duration={15} delay={3} blur={60} />
 
         {/* Infinite marquee strip */}
         <div style={{ position: "absolute", top: "18%", left: 0, width: "100%", overflow: "hidden", opacity: 0.06, pointerEvents: "none" }}>
@@ -183,7 +142,7 @@ export default function AboutPage() {
         {/* Hero Content */}
         <motion.div style={{ y: textY, opacity: heroOpacity, position: "relative", zIndex: 2, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "0 2rem" }}>
           {/* Back to home */}
-          <motion.a
+          <MotionLink
             href="/"
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -192,7 +151,7 @@ export default function AboutPage() {
             style={{ position: "absolute", top: "2.5rem", left: "2.5rem", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}
           >
             ← Back to Novure
-          </motion.a>
+          </MotionLink>
 
           <motion.span
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -235,17 +194,7 @@ export default function AboutPage() {
             transition={{ delay: 2 }}
             style={{ position: "absolute", bottom: "3rem" }}
           >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              style={{ width: 22, height: 34, borderRadius: 11, border: "1.5px solid rgba(255,255,255,0.2)", display: "flex", justifyContent: "center", paddingTop: 7 }}
-            >
-              <motion.div
-                animate={{ opacity: [1, 0.2, 1], y: [0, 10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                style={{ width: 3, height: 7, borderRadius: 2, background: "rgba(255,255,255,0.35)" }}
-              />
-            </motion.div>
+            <ScrollIndicator delay={0} />
           </motion.div>
         </motion.div>
       </div>
@@ -253,14 +202,7 @@ export default function AboutPage() {
       {/* ===== OUR STORY (warm light section) ===== */}
       <section style={{ padding: "10rem 2rem 6rem", maxWidth: "900px", margin: "0 auto" }}>
         <div ref={storyRef}>
-          <motion.span
-            initial={{ opacity: 0, x: -30 }}
-            animate={storyInView ? { opacity: 0.5, x: 0 } : {}}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            style={{ fontSize: "0.8rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "#999" }}
-          >
-            /01 — Our Story
-          </motion.span>
+          <SectionLabel number="01" label="Our Story" color="#999" />
 
           <motion.h2
             initial={{ opacity: 0, y: 60 }}
@@ -311,14 +253,7 @@ export default function AboutPage() {
       {/* ===== TEAM SECTION ===== */}
       <section style={{ padding: "4rem 2rem 8rem", background: "#f5f5f3" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <motion.span
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 0.5 }}
-            viewport={{ once: true }}
-            style={{ fontSize: "0.8rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "#999", display: "block", marginBottom: "1rem" }}
-          >
-            /02 — The Team
-          </motion.span>
+          <SectionLabel number="02" label="The Team" color="#999" />
 
           <motion.h2
             initial={{ opacity: 0, y: 50 }}
@@ -351,14 +286,7 @@ export default function AboutPage() {
         />
 
         <motion.div style={{ y: valuesY, position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto" }}>
-          <motion.span
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 0.5 }}
-            viewport={{ once: true }}
-            style={{ fontSize: "0.8rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: "1rem" }}
-          >
-            /03 — Our Values
-          </motion.span>
+          <SectionLabel number="03" label="Our Values" color="rgba(255,255,255,0.4)" />
 
           <motion.h2
             initial={{ opacity: 0, y: 50 }}
@@ -422,23 +350,23 @@ export default function AboutPage() {
           We&apos;re just getting started. Discover the collection and become part of the Novure story.
         </motion.p>
 
-        <motion.a
-          href="/"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          whileHover={{ scale: 1.06, boxShadow: "0 20px 60px rgba(155,81,224,0.25)" }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            display: "inline-block", padding: "1.1rem 4rem", borderRadius: "3rem",
-            background: "linear-gradient(135deg, #9b51e0, #ff8c00)", color: "#fff",
-            fontWeight: 700, fontSize: "1rem", textDecoration: "none", letterSpacing: "-0.01em",
-            boxShadow: "0 8px 30px rgba(155,81,224,0.15)",
-          }}
-        >
+        <MotionLink
+            href="/"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            whileHover={{ scale: 1.06, boxShadow: "0 20px 60px rgba(155,81,224,0.25)" }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              display: "inline-block", padding: "1.1rem 4rem", borderRadius: "3rem",
+              background: "linear-gradient(135deg, #9b51e0, #ff8c00)", color: "#fff",
+              fontWeight: 700, fontSize: "1rem", textDecoration: "none", letterSpacing: "-0.01em",
+              boxShadow: "0 8px 30px rgba(155,81,224,0.15)",
+            }}
+          >
           Explore Collection
-        </motion.a>
+        </MotionLink>
       </section>
 
       {/* Footer */}

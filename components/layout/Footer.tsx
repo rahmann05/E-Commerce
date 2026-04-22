@@ -2,6 +2,8 @@
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef } from "react";
+import Link from "next/link";
+import { FOOTER_LINKS } from "../data/navigation";
 
 export default function Footer() {
   const ref = useRef<HTMLDivElement>(null);
@@ -79,8 +81,9 @@ export default function Footer() {
             >
               {col.title}
             </div>
+
             {col.items.map((item) => (
-              <a
+              <Link
                 key={item}
                 href="#"
                 style={{
@@ -99,7 +102,7 @@ export default function Footer() {
                 }
               >
                 {item}
-              </a>
+              </Link>
             ))}
           </motion.div>
         ))}

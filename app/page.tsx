@@ -1,13 +1,13 @@
 "use client";
 
-import { ColorProvider } from "@/components/ColorContext";
-import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import EssentializedSection from "@/components/EssentializedSection";
-import DiscoverSection from "@/components/DiscoverSection";
-import StyleOutlookSection from "@/components/StyleOutlookSection";
-import ScienceSection from "@/components/ScienceSection";
-import Footer from "@/components/Footer";
+import { ColorProvider } from "@/components/providers/ColorContext";
+import Navbar from "@/components/layout/Navbar";
+import HeroSection from "@/components/sections/HeroSection";
+import EssentializedSection from "@/components/sections/EssentializedSection";
+import DiscoverSection from "@/components/sections/DiscoverSection";
+import StyleOutlookSection from "@/components/sections/StyleOutlookSection";
+import ScienceSection from "@/components/sections/ScienceSection";
+import Footer from "@/components/layout/Footer";
 
 export default function Home() {
   return (
