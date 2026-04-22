@@ -169,11 +169,12 @@ html {
 }
 
 .essentialized-title {
-  font-size: clamp(4rem, 13vw, 14rem);
+  font-size: clamp(5rem, 15vw, 18rem);
   font-weight: 800;
   letter-spacing: -0.06em;
   line-height: 0.85;
   text-align: center;
+  white-space: nowrap;
   padding: 0 1rem;
   background: linear-gradient(180deg, #1a1a1a 0%, #999 100%);
   -webkit-background-clip: text;
@@ -193,7 +194,7 @@ html {
 .wave-image-container {
   position: relative;
   width: 94%;
-  margin: 0 auto;
+  margin: -12vw auto 0;
   height: 65vh;
   border-radius: 2.5rem;
   overflow: hidden;

@@ -114,7 +114,6 @@ export default function HeroSection() {
       ref={containerRef}
       className="hero-section"
       onMouseMove={handleMouseMove}
-      style={{ cursor: "none" }}
     >
       {/* Subtle background grid */}
       <div
@@ -175,6 +174,8 @@ export default function HeroSection() {
               }}
               style={{
                 position: "absolute",
+                left: 0,
+                top: 0,
                 width: clothing.width,
                 height: clothing.height,
                 zIndex: 10,

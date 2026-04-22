@@ -1,188 +1,167 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import { useColorTheme } from "./ColorContext";
-
-// Simple 2D noise function for organic flow
-function pseudoNoise(x: number, y: number, t: number): number {
-  return (
-    Math.sin(x * 0.8 + t * 0.4) *
-    Math.cos(y * 0.6 + t * 0.3) *
-    Math.sin((x + y) * 0.5 + t * 0.2) *
-    0.5 +
-    0.5
-  );
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
-    : [255, 140, 0];
-}
-
-function lerpColor(
-  a: [number, number, number],
-  b: [number, number, number],
-  t: number
-): [number, number, number] {
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * t),
-    Math.round(a[1] + (b[1] - a[1]) * t),
-    Math.round(a[2] + (b[2] - a[2]) * t),
-  ];
-}
+import { useMemo } from "react";
 
 export default function AnimatedWave() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { activeTheme } = useColorTheme();
 
-  // Store current colors for smooth interpolation
-  const currentColors = useRef({
-    primary: hexToRgb(activeTheme.primary),
-    secondary: hexToRgb(activeTheme.secondary),
-    tertiary: hexToRgb(activeTheme.tertiary),
-  });
-  const targetColors = useRef({
-    primary: hexToRgb(activeTheme.primary),
-    secondary: hexToRgb(activeTheme.secondary),
-    tertiary: hexToRgb(activeTheme.tertiary),
-  });
-
-  // Update target when theme changes
-  useEffect(() => {
-    targetColors.current = {
-      primary: hexToRgb(activeTheme.primary),
-      secondary: hexToRgb(activeTheme.secondary),
-      tertiary: hexToRgb(activeTheme.tertiary),
-    };
+  // Create smooth fluid gradient blobs
+  // We use the theme colors to color the blobs
+  const colors = useMemo(() => {
+    return [
+      activeTheme.primary,
+      activeTheme.secondary,
+      activeTheme.tertiary,
+      activeTheme.accent || activeTheme.primary,
+      activeTheme.secondary,
+    ];
   }, [activeTheme]);
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-    const t = performance.now() * 0.001;
-
-    // Smoothly interpolate current towards target
-    const lerp = 0.02;
-    currentColors.current.primary = lerpColor(
-      currentColors.current.primary,
-      targetColors.current.primary,
-      lerp
-    );
-    currentColors.current.secondary = lerpColor(
-      currentColors.current.secondary,
-      targetColors.current.secondary,
-      lerp
-    );
-    currentColors.current.tertiary = lerpColor(
-      currentColors.current.tertiary,
-      targetColors.current.tertiary,
-      lerp
-    );
-
-    const c1 = currentColors.current.primary;
-    const c2 = currentColors.current.secondary;
-    const c3 = currentColors.current.tertiary;
-
-    // Draw flowing gradient layers
-    const imageData = ctx.createImageData(w, h);
-    const data = imageData.data;
-
-    const step = 4; // Render every 4th pixel for performance, then scale
-    for (let y = 0; y < h; y += step) {
-      for (let x = 0; x < w; x += step) {
-        const nx = x / w;
-        const ny = y / h;
-
-        // Multiple noise layers for organic flow
-        const n1 = pseudoNoise(nx * 3, ny * 2, t * 0.5);
-        const n2 = pseudoNoise(nx * 5 + 10, ny * 3 + 5, t * 0.3 + 2);
-        const n3 = pseudoNoise(nx * 2 + 20, ny * 4 + 10, t * 0.7 + 4);
-
-        // Blend between 3 colors based on noise
-        const blend = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
-
-        let r: number, g: number, b: number;
-        if (blend < 0.4) {
-          const t2 = blend / 0.4;
-          [r, g, b] = lerpColor(c1, c2, t2);
-        } else if (blend < 0.7) {
-          const t2 = (blend - 0.4) / 0.3;
-          [r, g, b] = lerpColor(c2, c3, t2);
-        } else {
-          const t2 = (blend - 0.7) / 0.3;
-          [r, g, b] = lerpColor(c3, c1, t2);
-        }
-
-        // Apply silk-like highlights
-        const highlight = Math.pow(n2, 3) * 60;
-        r = Math.min(255, r + highlight);
-        g = Math.min(255, g + highlight);
-        b = Math.min(255, b + highlight);
-
-        // Fill the step×step block
-        for (let dy = 0; dy < step && y + dy < h; dy++) {
-          for (let dx = 0; dx < step && x + dx < w; dx++) {
-            const idx = ((y + dy) * w + (x + dx)) * 4;
-            data[idx] = r;
-            data[idx + 1] = g;
-            data[idx + 2] = b;
-            data[idx + 3] = 255;
-          }
-        }
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-
-    // Apply gaussian-like blur by drawing scaled
-    // Draw the canvas onto itself with slight blur effect using compositing
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Use lower resolution for performance
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.floor(rect.width / 3);
-      canvas.height = Math.floor(rect.height / 3);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    let frameId: number;
-    const loop = () => {
-      draw();
-      frameId = requestAnimationFrame(loop);
-    };
-    loop();
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener("resize", resize);
-    };
-  }, [draw]);
-
   return (
-    <canvas
-      ref={canvasRef}
+    <div
       style={{
         position: "absolute",
         inset: 0,
         width: "100%",
         height: "100%",
-        imageRendering: "auto",
-        filter: "blur(8px) saturate(1.2)",
+        overflow: "hidden",
+        backgroundColor: activeTheme.tertiary,
+        transition: "background-color 2s ease",
       }}
-    />
+    >
+      {/* 
+        Heavy blur filter on the container makes the moving circles 
+        blend together perfectly like a fluid mesh gradient or silk 
+      */}
+      <div
+        style={{
+          position: "absolute",
+          inset: "-20%", // Bleed to prevent hard edges after blur
+          width: "140%",
+          height: "140%",
+          filter: "blur(90px) saturate(150%)",
+          transform: "translateZ(0)", // Hardware acceleration
+        }}
+      >
+        {/* Blob 1 */}
+        <motion.div
+          animate={{
+            x: ["0%", "20%", "-10%", "0%"],
+            y: ["0%", "-30%", "20%", "0%"],
+            scale: [1, 1.2, 0.9, 1],
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            top: "10%",
+            left: "10%",
+            width: "60%",
+            height: "60%",
+            borderRadius: "50%",
+            background: colors[0],
+            transition: "background 2s ease",
+            mixBlendMode: "screen",
+          }}
+        />
+
+        {/* Blob 2 */}
+        <motion.div
+          animate={{
+            x: ["0%", "-25%", "15%", "0%"],
+            y: ["0%", "25%", "-15%", "0%"],
+            scale: [1, 1.1, 0.95, 1],
+          }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          style={{
+            position: "absolute",
+            top: "20%",
+            right: "10%",
+            width: "55%",
+            height: "55%",
+            borderRadius: "50%",
+            background: colors[1],
+            transition: "background 2s ease",
+            mixBlendMode: "screen",
+          }}
+        />
+
+        {/* Blob 3 */}
+        <motion.div
+          animate={{
+            x: ["0%", "30%", "-20%", "0%"],
+            y: ["0%", "-10%", "30%", "0%"],
+            scale: [1, 1.3, 0.8, 1],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          style={{
+            position: "absolute",
+            bottom: "10%",
+            left: "20%",
+            width: "65%",
+            height: "65%",
+            borderRadius: "50%",
+            background: colors[2],
+            transition: "background 2s ease",
+            mixBlendMode: "multiply",
+          }}
+        />
+
+        {/* Blob 4 */}
+        <motion.div
+          animate={{
+            x: ["0%", "-15%", "25%", "0%"],
+            y: ["0%", "35%", "-10%", "0%"],
+            scale: [1, 0.9, 1.2, 1],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+          style={{
+            position: "absolute",
+            bottom: "20%",
+            right: "20%",
+            width: "50%",
+            height: "50%",
+            borderRadius: "40%",
+            background: colors[3],
+            transition: "background 2s ease",
+          }}
+        />
+
+        {/* Extra flow blob */}
+        <motion.div
+          animate={{
+            x: ["-10%", "20%", "-30%", "-10%"],
+            y: ["-20%", "10%", "30%", "-20%"],
+            rotate: [0, 90, 180, 360],
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          style={{
+            position: "absolute",
+            top: "30%",
+            left: "30%",
+            width: "40%",
+            height: "80%",
+            borderRadius: "50% 30% 60% 40%",
+            background: colors[4],
+            transition: "background 2s ease",
+            mixBlendMode: "overlay",
+            opacity: 0.8,
+          }}
+        />
+      </div>
+
+      {/* Subtle grain/noise overlay for fabric/texture feel */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          opacity: 0.15,
+          backgroundImage: "url('data:image/svg+xml;utf8,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')",
+          mixBlendMode: "overlay",
+          pointerEvents: "none",
+        }}
+      />
+    </div>
   );
 }
