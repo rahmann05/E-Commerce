@@ -124,20 +124,77 @@ export default function ScienceSection() {
         </motion.p>
       </motion.div>
 
-      {/* Animated divider line */}
-      <motion.div
-        initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.5, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          width: "60%",
-          height: "1px",
-          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
-          marginTop: "4rem",
-          transformOrigin: "center",
+      {/* Infinite Looping Carousel */}
+      <div 
+        style={{ 
+          position: "relative", 
+          width: "100%", 
+          marginTop: "4rem", 
+          overflow: "hidden",
+          padding: "2rem 0"
         }}
-      />
+      >
+
+        <motion.div
+          style={{ display: "flex", gap: "3rem", width: "max-content" }}
+          animate={{ x: ["-50%", "0%"] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+        >
+          {[
+            "/images/tees1.png",
+            "/images/jeans1.png",
+            "/images/tees2.png",
+            "/images/jeans2.png",
+            "/images/tees3.png",
+            "/images/jeans3.png",
+            "/images/tees4.png",
+            "/images/tees5.png",
+            // Duplicate for seamless loop
+            "/images/tees1.png",
+            "/images/jeans1.png",
+            "/images/tees2.png",
+            "/images/jeans2.png",
+            "/images/tees3.png",
+            "/images/jeans3.png",
+            "/images/tees4.png",
+            "/images/tees5.png",
+          ].map((src, idx) => (
+            <div 
+              key={idx} 
+              style={{ 
+                width: "320px", 
+                height: "380px", 
+                flexShrink: 0, 
+                display: "flex", 
+                justifyContent: "center", 
+                alignItems: "center" 
+              }}
+            >
+              <img 
+                src={src} 
+                alt="Clothing" 
+                style={{ width: "90%", height: "90%", objectFit: "contain", filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.5))" }} 
+              />
+            </div>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Promotional Footer Bar */}
+      <div 
+        style={{ 
+          width: "100%", 
+          borderTop: "1px solid rgba(255,255,255,0.1)", 
+          borderBottom: "1px solid rgba(255,255,255,0.1)", 
+          padding: "1.5rem 0", 
+          marginTop: "4rem",
+          textAlign: "center"
+        }}
+      >
+        <span style={{ fontSize: "0.85rem", fontWeight: 600, letterSpacing: "0.05em", color: "rgba(255,255,255,0.8)" }}>
+          USE ORMAS25 NOW, GET 25% OFF YOUR FIRST FIT
+        </span>
+      </div>
     </section>
   );
 }

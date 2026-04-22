@@ -39,6 +39,7 @@ interface ColorContextValue {
   setActiveTheme: (theme: ColorTheme) => void;
   activeIndex: number;
   setActiveIndex: (index: number) => void;
+  setCustomTheme: (theme: ColorTheme | null) => void;
 }
 
 const ColorContext = createContext<ColorContextValue>({
@@ -46,20 +47,30 @@ const ColorContext = createContext<ColorContextValue>({
   setActiveTheme: () => {},
   activeIndex: 0,
   setActiveIndex: () => {},
+  setCustomTheme: () => {},
 });
 
 export function ColorProvider({ children }: { children: ReactNode }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeTheme = COLOR_THEMES[activeIndex];
+  const [customTheme, setCustomTheme] = useState<ColorTheme | null>(null);
+  const activeTheme = customTheme || COLOR_THEMES[activeIndex];
 
   const setActiveTheme = (theme: ColorTheme) => {
     const idx = COLOR_THEMES.findIndex((t) => t.name === theme.name);
-    if (idx >= 0) setActiveIndex(idx);
+    if (idx >= 0) {
+      setActiveIndex(idx);
+      setCustomTheme(null);
+    }
+  };
+
+  const handleSetActiveIndex = (idx: number) => {
+    setActiveIndex(idx);
+    setCustomTheme(null);
   };
 
   return (
     <ColorContext.Provider
-      value={{ activeTheme, setActiveTheme, activeIndex, setActiveIndex }}
+      value={{ activeTheme, setActiveTheme, activeIndex, setActiveIndex: handleSetActiveIndex, setCustomTheme }}
     >
       {children}
     </ColorContext.Provider>

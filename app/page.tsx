@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import EssentializedSection from "@/components/EssentializedSection";
 import DiscoverSection from "@/components/DiscoverSection";
+import StyleOutlookSection from "@/components/StyleOutlookSection";
 import ScienceSection from "@/components/ScienceSection";
 import Footer from "@/components/Footer";
 
@@ -24,7 +25,10 @@ export default function Home() {
         {/* Section 3: Discover Reimagined - product grid */}
         <DiscoverSection />
 
-        {/* Section 4: Science of Everyday Comfort */}
+        {/* Section 4: Style Outlook - Parallax Bento Grid */}
+        <StyleOutlookSection />
+
+        {/* Section 5: Science of Everyday Comfort */}
         <ScienceSection />
 
         {/* Footer */}

@@ -37,7 +37,7 @@ export default function Navbar() {
       <div className="main-navbar">
         <div style={{ display: "flex", gap: "2.5rem" }}>
           <a href="#">Male</a>
-          <a href="#">Female</a>
+          <a href="/about">About Us</a>
         </div>
         <a href="#" className="brand">Novure</a>
         <div style={{ display: "flex", gap: "2.5rem" }}>

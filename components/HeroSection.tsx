@@ -4,15 +4,15 @@ import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "fra
 import Image from "next/image";
 import { useRef, useState, useEffect, useCallback } from "react";
 
-// Individual clothing items that follow the cursor
 const CLOTHING_ITEMS = [
-  { src: "/images/tee-purple.png", width: 120, height: 120 },
-  { src: "/images/hoodie-orange.png", width: 140, height: 140 },
-  { src: "/images/tee-lime.png", width: 110, height: 110 },
-  { src: "/images/pants-orange.png", width: 100, height: 130 },
-  { src: "/images/tee-purple.png", width: 90, height: 90 },
-  { src: "/images/hoodie-orange.png", width: 130, height: 130 },
-  { src: "/images/tee-lime.png", width: 100, height: 100 },
+  { src: "/images/tees1.png", width: 120, height: 120 },
+  { src: "/images/jeans1.png", width: 100, height: 140 },
+  { src: "/images/tees2.png", width: 110, height: 110 },
+  { src: "/images/jeans2.png", width: 110, height: 130 },
+  { src: "/images/tees3.png", width: 90, height: 90 },
+  { src: "/images/tees4.png", width: 130, height: 130 },
+  { src: "/images/jeans3.png", width: 100, height: 140 },
+  { src: "/images/tees5.png", width: 110, height: 110 },
 ];
 
 interface TrailItem {
@@ -38,23 +38,21 @@ export default function HeroSection() {
     offset: ["start start", "end start"],
   });
 
-  // Parallax transforms with spring physics
+  // Parallax
   const rawYTitle = useTransform(scrollYProgress, [0, 1], [0, 250]);
   const rawOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
   const yTitle = useSpring(rawYTitle, { stiffness: 80, damping: 20 });
   const opacityContent = useSpring(rawOpacity, { stiffness: 80, damping: 20 });
 
-  // Slower loading animation (5 seconds)
   useEffect(() => {
     let frame: number;
     let start: number | null = null;
-    const duration = 5000; // 5 seconds
+    const duration = 5000;
 
     const animate = (timestamp: number) => {
       if (!start) start = timestamp;
       const elapsed = timestamp - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out with slower curve
       const eased = 1 - Math.pow(1 - progress, 2.5);
       setLoadProgress(Math.round(eased * 100));
 
@@ -69,11 +67,9 @@ export default function HeroSection() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Handle mouse movement - spawn clothes near cursor
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const now = Date.now();
-      // Spawn one every 150ms
       if (now - lastSpawnTime.current < 150) return;
       lastSpawnTime.current = now;
 
@@ -184,12 +180,15 @@ export default function HeroSection() {
                 mixBlendMode: "lighten",
               }}
             >
-              <Image
-                src={clothing.src}
+              <img
+                src={`${clothing.src}?v=3`}
                 alt=""
-                fill
                 className="object-contain"
-                sizes="150px"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
               />
             </motion.div>
           );
