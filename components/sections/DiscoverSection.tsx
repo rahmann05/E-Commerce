@@ -2,16 +2,26 @@
 
 import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
+import { fetchProductsAction } from "@/lib/actions/product-actions";
 
 import FilterBar from "../ui/FilterBar";
 import ProductCard from "../ui/ProductCard";
 import AnimatedText from "../ui/AnimatedText";
 import SectionLabel from "../ui/SectionLabel";
-import { DISCOVER_PRODUCTS } from "../data/products";
 
 export default function DiscoverSection() {
+  const [products, setProducts] = useState<any[]>([]);
   const sectionRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    async function loadProducts() {
+      const data = await fetchProductsAction();
+      setProducts(data);
+    }
+    loadProducts();
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
@@ -63,9 +73,13 @@ export default function DiscoverSection() {
 
         {/* Right: Product Cards */}
         <motion.div className="discover-right" style={{ y: yCards }}>
-          {DISCOVER_PRODUCTS.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
+          {products.length > 0 ? (
+            products.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))
+          ) : (
+            <p className="loading-text">Loading products...</p>
+          )}
         </motion.div>
       </div>
     </section>
