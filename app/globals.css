@@ -432,15 +432,54 @@ html {
   transform: rotate(45deg);
 }
 
+.slider-controls {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.slider-nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #e0e0de;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #111;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.slider-nav-btn:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+  transform: scale(1.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.slider-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.discover-right-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  padding-bottom: 2rem;
+}
+
 .discover-right {
   flex: 1;
   display: flex;
   gap: 2rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  /* Removed native scroll to support controlled motion slider */
+  scroll-snap-type: none;
   -ms-overflow-style: none;
   scrollbar-width: none;
-  padding-bottom: 2rem;
 }
 .discover-right::-webkit-scrollbar {
   display: none;
