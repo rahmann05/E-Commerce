@@ -7,7 +7,7 @@ export interface CatalogueProduct {
   id: number;
   name: string;
   description: string;
-  category: "tees" | "jeans" | "accessories";
+  category: "tees" | "jeans" | "accessories" | "outerwear";
   price: number;
   rating: number;
   sizes: string;

@@ -12,7 +12,7 @@ import { CATALOGUE_PRODUCTS_FALLBACK } from "@/components/data/products";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type CategoryFilter = "all" | "tees" | "jeans" | "accessories";
+export type CategoryFilter = "all" | "tees" | "jeans" | "accessories" | "outerwear";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -21,7 +21,7 @@ export default function CatalogueProductCard({ product, onClick }: Props) {
 
   return (
     <div
-      className="cat-product-card neo-glow-ring"
+      className="cat-product-card"
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

@@ -36,6 +36,7 @@ export default function CatalogueClient({ initialProducts }: Props) {
       all:         initialProducts.length,
       tees:        initialProducts.filter((p) => p.category === "tees").length,
       jeans:       initialProducts.filter((p) => p.category === "jeans").length,
+      outerwear:   initialProducts.filter((p) => p.category === "outerwear").length,
       accessories: initialProducts.filter((p) => p.category === "accessories").length,
     };
     return c;

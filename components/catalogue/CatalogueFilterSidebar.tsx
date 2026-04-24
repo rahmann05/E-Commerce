@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import type { CategoryFilter } from "@/lib/actions/catalogue";
 
+import AnimatedText from "@/components/ui/AnimatedText";
+
 interface Props {
   activeCategory: CategoryFilter;
   counts: Record<string, number>;
@@ -15,6 +17,7 @@ const CATEGORIES: { key: CategoryFilter; label: string }[] = [
   { key: "all",        label: "All Items"    },
   { key: "tees",       label: "Tees"         },
   { key: "jeans",      label: "Denim"        },
+  { key: "outerwear",  label: "Outerwear"    },
   { key: "accessories",label: "Accessories"  },
 ];
 
@@ -38,7 +41,7 @@ export default function CatalogueFilterSidebar({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="catalogue-sidebar-title">Filter & Sort</div>
+      <AnimatedText text="Filter & Sort" as="p" style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#aaa", marginBottom: "1.5rem" }} />
 
       {/* Category section */}
       <div className="sidebar-section">
@@ -93,7 +96,7 @@ export default function CatalogueFilterSidebar({
         ))}
       </div>
 
-      {/* Decorative neo box */}
+      {/* Decorative box - Minimal style */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,15 +104,15 @@ export default function CatalogueFilterSidebar({
         style={{
           marginTop: "2rem",
           padding: "1.4rem",
-          borderRadius: "1.2rem",
-          background: "#f5f5f3",
-          boxShadow: "inset 4px 4px 10px rgba(0,0,0,0.06), inset -4px -4px 10px rgba(255,255,255,0.8)",
+          borderRadius: "0.8rem",
+          background: "#f9f9f9",
+          border: "1px solid #f0f0f0",
         }}
       >
-        <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#bbb", marginBottom: "0.6rem" }}>
+        <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#111", marginBottom: "0.6rem" }}>
           Free Shipping
         </div>
-        <div style={{ fontSize: "0.82rem", color: "#999", lineHeight: 1.6 }}>
+        <div style={{ fontSize: "0.82rem", color: "#777", lineHeight: 1.6 }}>
           On orders above Rp500k. Delivered in 2–4 business days.
         </div>
       </motion.div>
