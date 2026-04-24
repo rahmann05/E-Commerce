@@ -3,9 +3,12 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
-import { FOOTER_LINKS } from "../data/navigation";
 
-export default function Footer() {
+interface FooterProps {
+  noAnimation?: boolean;
+}
+
+export default function Footer({ noAnimation = false }: FooterProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -25,7 +28,7 @@ export default function Footer() {
   return (
     <motion.footer
       ref={ref}
-      style={{ scale }}
+      style={{ scale: noAnimation ? 1 : scale }}
       className="site-footer"
     >
       <div
