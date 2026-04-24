@@ -19,7 +19,7 @@ export default function Home() {
         {/* Section 1: Dark hero with cursor-following clothes */}
         <HeroSection />
 
-        {/* Section 2: Essentialized - giant text clipping into animated wave */}
+        {/* Section 2: Essentialized - */}
         <EssentializedSection />
 
         {/* Section 3: Discover Reimagined - product grid */}
