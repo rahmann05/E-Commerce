@@ -96,23 +96,21 @@ export default function CatalogueFilterSidebar({
         ))}
       </div>
 
-      {/* Decorative box - Minimal style */}
+      {/* Decorative info card — neumorphism on light surface */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.7 }}
+        transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="neo-card"
         style={{
           marginTop: "2rem",
-          padding: "1.4rem",
-          borderRadius: "0.8rem",
-          background: "#f9f9f9",
-          border: "1px solid #f0f0f0",
+          padding: "1.4rem 1.5rem",
         }}
       >
-        <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#111", marginBottom: "0.6rem" }}>
+        <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#111", marginBottom: "0.6rem" }}>
           Free Shipping
         </div>
-        <div style={{ fontSize: "0.82rem", color: "#777", lineHeight: 1.6 }}>
+        <div style={{ fontSize: "0.82rem", color: "#777", lineHeight: 1.65 }}>
           On orders above Rp500k. Delivered in 2–4 business days.
         </div>
       </motion.div>

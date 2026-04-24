@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import GlowOrb from "@/components/ui/GlowOrb";
 import ScrollIndicator from "@/components/ui/ScrollIndicator";
 

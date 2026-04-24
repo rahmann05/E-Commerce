@@ -6,7 +6,7 @@ import type { CategoryFilter } from "@/lib/actions/catalogue";
 import CatalogueFilterSidebar from "@/components/catalogue/CatalogueFilterSidebar";
 import CatalogueGrid from "@/components/catalogue/CatalogueGrid";
 import ProductDetailModal from "@/components/catalogue/ProductDetailModal";
-import CatalogueParallaxBanner from "@/components/catalogue/CatalogueParallaxBanner";
+import CatalogueWaveSection from "@/components/catalogue/CatalogueWaveSection";
 
 interface Props {
   initialProducts: CatalogueProduct[];
@@ -44,9 +44,7 @@ export default function CatalogueClient({ initialProducts }: Props) {
 
   return (
     <div className="catalogue-page">
-      {/* Mid-page parallax banner */}
-      <CatalogueParallaxBanner />
-
+      <CatalogueWaveSection />
       {/* Products body */}
       <div id="catalogue-grid" className="catalogue-body">
         <CatalogueFilterSidebar

@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { X, ArrowUpRight, Star } from "lucide-react";
 import type { CatalogueProduct } from "./types";
+import { useAuth } from "@/components/providers/AuthContext";
+import { useCart } from "@/components/providers/CartContext";
 
 interface Props {
   product: CatalogueProduct | null;
@@ -41,11 +44,37 @@ function expandSizeRange(range: string): string[] {
 }
 
 export default function ProductDetailModal({ product, onClose }: Props) {
+  const { user } = useAuth();
+  const { addItem } = useCart();
+  const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
 
   function handleAdd() {
+    if (!user) {
+      // Not logged in — send to login, return here afterwards
+      onClose();
+      router.push("/login?redirect=/catalogue");
+      return;
+    }
+    
+    if (!product) return;
+    
+    // Default to first size/color if none selected for demo purposes
+    const size = selectedSize || (product.sizes ? expandSizeRange(product.sizes)[0] : "OS");
+    const color = selectedColor || (product.colors.length > 0 ? product.colors[0] : "Default");
+
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.image,
+      size,
+      color,
+      quantity: 1,
+    });
+
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }
@@ -126,14 +155,17 @@ export default function ProductDetailModal({ product, onClose }: Props) {
               </motion.div>
 
               {/* Close button */}
-              <button
+              <motion.button
                 type="button"
                 className="modal-close-btn"
                 onClick={onClose}
                 aria-label="Close"
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <X size={16} />
-              </button>
+              </motion.button>
             </div>
 
             {/* ── Right: product details ── */}
@@ -171,14 +203,16 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                     <div className="modal-size-label">Select Size</div>
                     <div className="modal-sizes-row">
                       {sizes.map((size) => (
-                        <button
+                        <motion.button
                           type="button"
                           key={size}
                           className={`modal-size-btn${selectedSize === size ? " selected" : ""}`}
                           onClick={() => setSelectedSize(size)}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
                           {size}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </>
@@ -209,6 +243,9 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                   className="modal-add-btn"
                   onClick={handleAdd}
                   whileTap={{ scale: 0.97 }}
+                  style={{
+                    background: user ? "#111" : "rgba(155,81,224,0.9)",
+                  }}
                 >
                   <AnimatePresence mode="wait">
                     <motion.span
@@ -218,7 +255,11 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {added ? "Added to Cart ✓" : "Add to Cart"}
+                      {added
+                        ? "Added to Cart ✓"
+                        : user
+                        ? "Add to Cart"
+                        : "Login untuk Membeli"}
                     </motion.span>
                   </AnimatePresence>
                   {!added && (
