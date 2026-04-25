@@ -6,7 +6,7 @@ export async function fetchProductsAction() {
   const products = await getProducts()
   // Transform DB products to match UI expectations if necessary
   return products.map(p => ({
-    id: p.id,
+    id: Number.parseInt(String(p.id), 10) || 0,
     name: p.name,
     sizes: 'S - XXL', // Placeholder as it's not in DB yet (could be added to schema)
     price: Number(p.price),

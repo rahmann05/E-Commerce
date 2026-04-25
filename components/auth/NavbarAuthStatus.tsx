@@ -12,6 +12,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthContext";
 
+import { useEffect, useState } from "react";
+
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -24,8 +26,13 @@ function getInitials(name: string): string {
 export default function NavbarAuthStatus() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
 
-  if (isLoading) return null;
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || isLoading) return null;
 
   if (!user) {
     return (

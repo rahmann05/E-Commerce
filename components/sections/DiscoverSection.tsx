@@ -1,9 +1,11 @@
 "use client";
 
-import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { fetchProductsAction } from "@/lib/actions/product-actions";
+import type { DiscoverProduct } from "@/components/data/products";
 
 import FilterBar from "../ui/FilterBar";
 import ProductCard from "../ui/ProductCard";
@@ -11,18 +13,18 @@ import AnimatedText from "../ui/AnimatedText";
 import SectionLabel from "../ui/SectionLabel";
 
 export default function DiscoverSection() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<DiscoverProduct[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   
   useEffect(() => {
     async function loadProducts() {
       const data = await fetchProductsAction();
       setProducts(data);
       // Start in the middle of the triple-list for infinite feel
-      setCurrentIndex(data.length);
+      setCurrentIndex(data.length > 0 ? data.length : 0);
     }
     loadProducts();
   }, []);
@@ -31,19 +33,21 @@ export default function DiscoverSection() {
   const displayProducts = [...products, ...products, ...products];
 
   const handleNext = useCallback(() => {
-    if (isAnimating) return;
+    if (isAnimating || totalItems === 0) return;
     setIsAnimating(true);
     setCurrentIndex((prev) => prev + 1);
-  }, [isAnimating]);
+  }, [isAnimating, totalItems]);
 
   const handlePrev = useCallback(() => {
-    if (isAnimating) return;
+    if (isAnimating || totalItems === 0) return;
     setIsAnimating(true);
     setCurrentIndex((prev) => prev - 1);
-  }, [isAnimating]);
+  }, [isAnimating, totalItems]);
 
   // Handle wrap-around for infinite loop
   useEffect(() => {
+    if (totalItems === 0) return;
+
     if (currentIndex >= totalItems * 2) {
       const timer = setTimeout(() => {
         setIsAnimating(false);
@@ -117,6 +121,7 @@ export default function DiscoverSection() {
             transition={{ duration: 0.6, delay: 0.6 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
+            onClick={() => router.push("/catalogue")}
           >
             Explore All
             <span className="arrow-circle">

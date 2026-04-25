@@ -5,23 +5,25 @@
  * Grid of user info rows with editorial section label /02.
  */
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import type { SessionUser } from "@/lib/mock-users";
 import { motion } from "framer-motion";
 interface ProfileInfoCardProps {
   user: SessionUser;
+  onSave: (payload: { name: string; phone: string }) => void;
 }
 
-export default function ProfileInfoCard({ user }: ProfileInfoCardProps) {
+export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) {
   const [formData, setFormData] = useState({
     firstName: user.name.split(" ")[0] || "",
     lastName: user.name.split(" ")[1] || "",
     phone: user.phone || "",
   });
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert("Profil berhasil diperbarui! (Demo)");
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    onSave({ name: fullName || user.name, phone: formData.phone });
   };
 
   return (

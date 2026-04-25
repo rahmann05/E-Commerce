@@ -6,7 +6,7 @@
 
 "use server";
 
-import pool from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import type { CatalogueProduct } from "@/components/catalogue/types";
 import { CATALOGUE_PRODUCTS_FALLBACK } from "@/components/data/products";
 
@@ -16,48 +16,58 @@ export type CategoryFilter = "all" | "tees" | "jeans" | "accessories" | "outerwe
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function parseColors(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw as string[];
-  if (typeof raw === "string") {
-    try { return JSON.parse(raw) as string[]; } catch { return []; }
-  }
-  return [];
-}
-
-function rowToProduct(row: Record<string, unknown>): CatalogueProduct {
+function rowToProduct(
+  row: {
+    id: string;
+    name: string;
+    description: string;
+    price: unknown;
+    rating: number;
+    sizes: string | null;
+    images: string[];
+    colors: string[];
+    inStock: boolean;
+    category: { name: string };
+  },
+  index: number
+): CatalogueProduct {
+  const categoryName = row.category.name.toLowerCase();
+  const category = (["tees", "jeans", "accessories", "outerwear"].includes(categoryName)
+    ? categoryName
+    : "tees") as CatalogueProduct["category"];
   return {
-    id:          Number(row.id),
-    name:        String(row.name),
-    description: String(row.description ?? ""),
-    category:    String(row.category) as CatalogueProduct["category"],
-    price:       Number(row.price),
-    rating:      Number(row.rating),
-    sizes:       String(row.sizes ?? "S - XXL"),
-    image:       String(row.image),
-    colors:      parseColors(row.colors),
-    inStock:     Boolean(row.in_stock),
+    id: index + 1,
+    name: row.name,
+    description: row.description ?? "",
+    category,
+    price: Number(row.price),
+    rating: row.rating ?? 5,
+    sizes: row.sizes ?? "S - XXL",
+    image: row.images?.[0] ?? "/images/model1.jpg",
+    colors: row.colors ?? [],
+    inStock: row.inStock,
   };
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Fetch products from MySQL.
+ * Fetch products from PostgreSQL via Prisma.
  * Falls back to static data if the DB is unreachable.
  */
 export async function getProducts(
   category: CategoryFilter = "all"
 ): Promise<CatalogueProduct[]> {
   try {
-    const sql =
-      category === "all"
-        ? "SELECT * FROM products WHERE in_stock = 1 ORDER BY created_at DESC"
-        : "SELECT * FROM products WHERE in_stock = 1 AND category = ? ORDER BY created_at DESC";
-
-    const params = category === "all" ? [] : [category];
-    const [rows] = await pool.execute(sql, params);
-
-    return (rows as Record<string, unknown>[]).map(rowToProduct);
+    const rows = await prisma.product.findMany({
+      where: {
+        inStock: true,
+        ...(category === "all" ? {} : { category: { name: { equals: category, mode: "insensitive" } } }),
+      },
+      include: { category: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return rows.map(rowToProduct);
   } catch (err) {
     console.error("[DB] getProducts failed — using static fallback:", err);
     if (category === "all") return CATALOGUE_PRODUCTS_FALLBACK;
@@ -73,13 +83,13 @@ export async function getProductById(
   id: number
 ): Promise<CatalogueProduct | null> {
   try {
-    const [rows] = await pool.execute(
-      "SELECT * FROM products WHERE id = ? LIMIT 1",
-      [id]
-    );
-    const arr = rows as Record<string, unknown>[];
-    if (arr.length === 0) return null;
-    return rowToProduct(arr[0]);
+    const all = await prisma.product.findMany({
+      where: { inStock: true },
+      include: { category: true },
+      orderBy: { createdAt: "desc" },
+    });
+    const mapped = all.map(rowToProduct);
+    return mapped.find((item) => item.id === id) ?? null;
   } catch (err) {
     console.error("[DB] getProductById failed:", err);
     return CATALOGUE_PRODUCTS_FALLBACK.find((p) => p.id === id) ?? null;

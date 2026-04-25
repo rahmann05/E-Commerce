@@ -10,12 +10,11 @@ import {
   createContext,
   useContext,
   useState,
-  useEffect,
   useCallback,
   type ReactNode,
 } from "react";
 import type { SessionUser } from "@/lib/mock-users";
-import { getSession, clearSession, loginUser } from "@/lib/auth";
+import { getSession, clearSession, loginUser, patchSession } from "@/lib/auth";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,6 +26,7 @@ interface AuthContextValue {
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateUser: (patch: Partial<SessionUser>) => void;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -36,14 +36,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Hydrate from localStorage on mount (client only)
-  useEffect(() => {
-    setUser(getSession());
-    setIsLoading(false);
-  }, []);
+  const [user, setUser] = useState<SessionUser | null>(() => getSession());
+  const [isLoading] = useState(false);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -62,8 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((patch: Partial<SessionUser>) => {
+    const next = patchSession(patch);
+    if (next) {
+      setUser(next);
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

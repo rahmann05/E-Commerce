@@ -33,6 +33,17 @@ export function clearSession(): void {
   localStorage.removeItem(SESSION_KEY);
 }
 
+/** Merge partial user fields into current session */
+export function patchSession(
+  patch: Partial<SessionUser>
+): SessionUser | null {
+  const current = getSession();
+  if (!current) return null;
+  const next = { ...current, ...patch };
+  setSession(next);
+  return next;
+}
+
 /** Attempt to log in; returns session user or error string */
 export async function loginUser(
   email: string,
@@ -40,12 +51,25 @@ export async function loginUser(
 ): Promise<{ user: SessionUser } | { error: string }> {
   // Small artificial delay to feel realistic
   await new Promise((r) => setTimeout(r, 600));
-
-  const user = verifyCredentials(email, password);
-  if (!user) {
-    return { error: "Email atau password salah. Silakan coba lagi." };
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      return { error: data.error ?? "Gagal login." };
+    }
+    const data = (await res.json()) as { user: SessionUser };
+    setSession(data.user);
+    return { user: data.user };
+  } catch {
+    const user = verifyCredentials(email, password);
+    if (!user) {
+      return { error: "Email atau password salah. Silakan coba lagi." };
+    }
+    setSession(user);
+    return { user };
   }
-
-  setSession(user);
-  return { user };
 }

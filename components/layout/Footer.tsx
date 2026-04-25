@@ -20,9 +20,31 @@ export default function Footer({ noAnimation = false }: FooterProps) {
   const scale = useSpring(rawScale, { stiffness: 60, damping: 20 });
 
   const links = [
-    { title: "Shop", items: ["Tees", "Hoodies", "Pants", "Accessories"] },
-    { title: "Company", items: ["About", "Careers", "Press", "Sustainability"] },
-    { title: "Support", items: ["FAQ", "Returns", "Shipping", "Contact"] },
+    {
+      title: "Shop",
+      items: [
+        { label: "Catalogue", href: "/catalogue" },
+        { label: "Cart", href: "/cart" },
+        { label: "Profile", href: "/profile" },
+        { label: "Login", href: "/login" },
+      ],
+    },
+    {
+      title: "Company",
+      items: [
+        { label: "About", href: "/about" },
+        { label: "Home", href: "/" },
+      ],
+    },
+    {
+      title: "Support",
+      items: [
+        { label: "FAQ", href: "/about" },
+        { label: "Returns", href: "/about" },
+        { label: "Shipping", href: "/about" },
+        { label: "Contact", href: "/about" },
+      ],
+    },
   ];
 
   return (
@@ -87,8 +109,8 @@ export default function Footer({ noAnimation = false }: FooterProps) {
 
             {col.items.map((item) => (
               <Link
-                key={item}
-                href="#"
+                key={item.label}
+                href={item.href}
                 style={{
                   display: "block",
                   marginBottom: "0.6rem",
@@ -104,7 +126,7 @@ export default function Footer({ noAnimation = false }: FooterProps) {
                   (e.currentTarget.style.color = "rgba(255,255,255,0.4)")
                 }
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </motion.div>

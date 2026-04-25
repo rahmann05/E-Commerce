@@ -4,6 +4,7 @@ import { useCart } from "@/components/providers/CartContext";
 import { useAuth } from "@/components/providers/AuthContext";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, X, ArrowRight } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
@@ -20,8 +21,9 @@ function getActualPrice(price: number): number {
 }
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, cartTotal } = useCart();
+  const { items, updateQuantity, removeItem } = useCart();
   const { user } = useAuth();
+  const router = useRouter();
 
   const actualCartTotal = items.reduce((total, item) => total + getActualPrice(item.price) * item.quantity, 0);
 
@@ -148,7 +150,17 @@ export default function CartPage() {
                   <span>Rp{formatPrice(finalTotal)}</span>
                 </div>
 
-                <button className="cart-checkout-btn">
+                <button
+                  className="cart-checkout-btn"
+                  type="button"
+                  onClick={() => {
+                    if (!user) {
+                      router.push("/login?redirect=/cart");
+                      return;
+                    }
+                    router.push("/checkout");
+                  }}
+                >
                   <span>Lanjutkan ke Pembayaran</span>
                   <ArrowRight size={16} />
                 </button>

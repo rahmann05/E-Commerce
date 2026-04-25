@@ -7,6 +7,7 @@
 
 import type { MockOrder } from "./ProfileOrderCard";
 import ProfileOrderCard from "./ProfileOrderCard";
+import type { ProfileOrder } from "@/components/providers/ProfileDataContext";
 
 const MOCK_ORDERS: MockOrder[] = [
   {
@@ -38,13 +39,42 @@ const MOCK_ORDERS: MockOrder[] = [
   },
 ];
 
-export default function ProfileOrderHistory() {
+interface ProfileOrderHistoryProps {
+  orders: ProfileOrder[];
+}
+
+function formatPrice(price: number): string {
+  return `Rp${price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+}
+
+function toDisplayOrder(order: ProfileOrder): MockOrder {
+  const primaryItem = order.items[0];
+  return {
+    id: order.id,
+    date: new Date(order.createdAt).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+    productName: primaryItem?.name ?? "Pesanan",
+    details: primaryItem
+      ? `Size: ${primaryItem.size} · Color: ${primaryItem.color} · Qty: ${primaryItem.quantity}`
+      : "Rincian produk tidak tersedia",
+    imageUrl: primaryItem?.imageUrl ?? "/images/model1.jpg",
+    total: formatPrice(order.total),
+    status: order.status,
+  };
+}
+
+export default function ProfileOrderHistory({ orders }: ProfileOrderHistoryProps) {
+  const renderedOrders = orders.length > 0 ? orders.map(toDisplayOrder) : MOCK_ORDERS;
+
   return (
     <section>
       <p className="profile-section-title">
         Riwayat Pesanan
       </p>
-      {MOCK_ORDERS.map((order, i) => (
+      {renderedOrders.map((order, i) => (
         <ProfileOrderCard key={order.id} order={order} delay={i * 0.1} />
       ))}
     </section>

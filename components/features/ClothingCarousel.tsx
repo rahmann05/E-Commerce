@@ -1,8 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import type { MotionValue } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ClothingItem } from "../data/products";
 
 interface ClothingCarouselProps {
@@ -11,7 +13,7 @@ interface ClothingCarouselProps {
   comboKey: number;
   onNext: () => void;
   onPrev: () => void;
-  yCards: any; // MotionValue
+  yCards: MotionValue<number>;
 }
 
 export default function ClothingCarousel({
@@ -22,6 +24,8 @@ export default function ClothingCarousel({
   onPrev,
   yCards,
 }: ClothingCarouselProps) {
+  const router = useRouter();
+
   return (
     <motion.div
       style={{
@@ -134,6 +138,7 @@ export default function ClothingCarousel({
         transition={{ duration: 0.6, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
+        onClick={() => router.push("/catalogue")}
         style={{ position: "relative" }}
       >
         Buy Now

@@ -65,6 +65,14 @@ export function verifyCredentials(
       u.password === password
   );
   if (!found) return null;
-  const { password: _pw, ...session } = found;
-  return session;
+  return {
+    id: found.id,
+    name: found.name,
+    email: found.email,
+    phone: found.phone,
+    address: found.address,
+    paymentPreference: found.paymentPreference,
+    role: found.role,
+    joinedAt: found.joinedAt,
+  };
 }

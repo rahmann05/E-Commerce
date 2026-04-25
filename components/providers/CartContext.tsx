@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 
 export interface CartItem {
@@ -26,43 +26,73 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+function getCartStorageKey(userId: string | undefined): string | null {
+  if (!userId) return null;
+  return `novure_cart_${userId}`;
+}
+
+function readStoredItems(userId: string | undefined): CartItem[] {
+  if (typeof window === "undefined") return [];
+  const storageKey = getCartStorageKey(userId);
+  if (!storageKey) return [];
+
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return [];
+    return JSON.parse(raw) as CartItem[];
+  } catch {
+    return [];
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [cartByUser, setCartByUser] = useState<Record<string, CartItem[]>>({});
+  const userId = user?.id;
+  const storageKey = useMemo(() => getCartStorageKey(userId), [userId]);
+  const items = userId
+    ? (cartByUser[userId] ?? readStoredItems(userId))
+    : [];
 
-  // Optional: clear cart on logout, or load from localStorage based on user
-  // For this mock, we'll just clear the cart when the user logs out.
-  useEffect(() => {
-    if (!user) {
-      setItems([]);
+  const setItemsForUser = (nextItems: CartItem[]) => {
+    if (!userId) return;
+    setCartByUser((prev) => ({ ...prev, [userId]: nextItems }));
+    if (typeof window !== "undefined" && storageKey) {
+      localStorage.setItem(storageKey, JSON.stringify(nextItems));
     }
-  }, [user]);
+  };
 
   const addItem = (item: Omit<CartItem, "id">) => {
-    setItems((prev) => {
-      const id = `${item.productId}-${item.size}-${item.color}`;
-      const existing = prev.find((i) => i.id === id);
-      if (existing) {
-        return prev.map((i) => 
+    const id = `${item.productId}-${item.size}-${item.color}`;
+    const existing = items.find((i) => i.id === id);
+    const nextItems = existing
+      ? items.map((i) =>
           i.id === id ? { ...i, quantity: i.quantity + item.quantity } : i
-        );
-      }
-      return [...prev, { ...item, id }];
-    });
+        )
+      : [...items, { ...item, id }];
+    setItemsForUser(nextItems);
   };
 
   const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setItemsForUser(items.filter((i) => i.id !== id));
   };
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) return;
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
+    setItemsForUser(
+      items.map((i) => (i.id === id ? { ...i, quantity } : i))
+    );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    if (!userId) return;
+    setItemsForUser([]);
+  };
 
-  const cartTotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const cartTotal = items.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
   const cartCount = items.reduce((count, item) => count + item.quantity, 0);
 
   return (
