@@ -23,16 +23,7 @@ export default function CatalogueHero() {
   return (
     <div ref={containerRef} className="catalogue-hero">
       {/* Radial dot grid — same as hero section */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage:
-            "radial-gradient(circle at center, rgba(255,255,255,0.018) 1px, transparent 1px)",
-          backgroundSize: "50px 50px",
-          zIndex: 1,
-        }}
-      />
+      <div className="catalogue-hero-radial-grid" />
 
       {/* Ambient glow orbs */}
       <GlowOrb

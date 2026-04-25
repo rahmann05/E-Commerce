@@ -46,7 +46,7 @@ export default function CartPage() {
         {items.length === 0 ? (
           <div className="cart-empty-state">
             <p>Tas belanja Anda masih kosong.</p>
-            <Link href="/catalogue" className="pill-btn" style={{ background: "#111", color: "#fff", display: "inline-block", marginTop: "2rem" }}>
+            <Link href="/catalogue" className="pill-btn cart-empty-link">
               Mulai Belanja
             </Link>
           </div>
@@ -74,23 +74,43 @@ export default function CartPage() {
                     <div className="cart-item-details">
                       <div className="cart-item-header">
                         <Link href={`/catalogue/${item.productId}`} className="cart-item-name">{item.name}</Link>
-                        <button className="cart-item-remove" onClick={() => removeItem(item.id)}>
+                        <button
+                          type="button"
+                          className="cart-item-remove"
+                          onClick={() => removeItem(item.id)}
+                          aria-label={`Hapus ${item.name} dari tas belanja`}
+                          title="Hapus item"
+                        >
                           <X size={16} />
                         </button>
                       </div>
                       
                       <div className="cart-item-meta">
-                        Size: {item.size} · Color: <span style={{ display: "inline-block", width: 10, height: 10, background: item.color, borderRadius: "50%", marginLeft: 4, border: "1px solid rgba(0,0,0,0.1)" }}></span>
+                        Size: {item.size} · Color:
+                        <svg className="cart-color-dot" viewBox="0 0 10 10" aria-hidden="true">
+                          <circle cx="5" cy="5" r="4.5" fill={item.color} stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+                        </svg>
                       </div>
 
                       <div className="cart-item-footer">
                         {/* Quantity Selector */}
                         <div className="cart-qty-selector">
-                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            aria-label={`Kurangi jumlah ${item.name}`}
+                            title="Kurangi jumlah"
+                          >
                             <Minus size={14} />
                           </button>
                           <span>{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            aria-label={`Tambah jumlah ${item.name}`}
+                            title="Tambah jumlah"
+                          >
                             <Plus size={14} />
                           </button>
                         </div>
@@ -134,8 +154,8 @@ export default function CartPage() {
                 </button>
 
                 {!user && (
-                  <p style={{ fontSize: "0.75rem", color: "#888", textAlign: "center", marginTop: "1rem" }}>
-                    Anda perlu <Link href="/login?redirect=/cart" style={{ textDecoration: "underline", color: "#111" }}>Masuk</Link> untuk melakukan checkout.
+                  <p className="cart-login-hint">
+                    Anda perlu <Link href="/login?redirect=/cart" className="cart-login-link">Masuk</Link> untuk melakukan checkout.
                   </p>
                 )}
               </div>

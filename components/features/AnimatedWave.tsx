@@ -1,8 +1,9 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useColorTheme } from "../providers/ColorContext";
 import { useMemo } from "react";
+import styles from "./AnimatedWave.module.css";
 
 export default function AnimatedWave() {
   const { activeTheme } = useColorTheme();
@@ -19,27 +20,12 @@ export default function AnimatedWave() {
   }, [activeTheme]);
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        backgroundColor: activeTheme.tertiary,
-        transition: "background-color 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-      }}
+    <motion.div
+      className={styles.animatedWaveContainer}
+      animate={{ backgroundColor: activeTheme.tertiary }}
+      transition={{ duration: 2.5, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: "-20%",
-          width: "140%",
-          height: "140%",
-          filter: "blur(80px) saturate(140%)",
-          transform: "translateZ(0)",
-        }}
-      >
+      <div className={styles.animatedWaveInner}>
         {/* Blob 1 */}
         <motion.div
           animate={{
@@ -147,16 +133,7 @@ export default function AnimatedWave() {
       />
 
       {/* Subtle grain/noise overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.1,
-          backgroundImage: "url('data:image/svg+xml;utf8,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')",
-          mixBlendMode: "overlay",
-          pointerEvents: "none",
-        }}
-      />
-    </div>
+      <div className={styles.waveGrain} />
+    </motion.div>
   );
 }

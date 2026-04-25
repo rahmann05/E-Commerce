@@ -16,8 +16,11 @@
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -244,8 +247,8 @@ html {
   width: 140px;
   height: 170px;
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 1.2rem;
   padding: 0.8rem;
@@ -291,6 +294,7 @@ html {
   gap: 0.8rem;
   padding: 0.75rem 1.5rem;
   background: rgba(30, 30, 30, 0.9);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   color: #fff;
   border-radius: 9999px;
@@ -527,7 +531,6 @@ html {
   /* Removed native scroll to support controlled motion slider */
   scroll-snap-type: none;
   -ms-overflow-style: none;
-  scrollbar-width: none;
 }
 
 .discover-right::-webkit-scrollbar {
@@ -946,8 +949,8 @@ html {
   left: 50%;
   transform: translateX(-50%) translateY(14px);
   background: rgba(17, 17, 17, 0.88);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   color: #fff;
   border: none;
   padding: 0.6rem 1.5rem;
@@ -972,8 +975,8 @@ html {
   position: fixed;
   inset: 0;
   background: rgba(10, 10, 10, 0.7);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   z-index: 200;
   display: flex;
   align-items: flex-end;
@@ -1031,8 +1034,8 @@ html {
   border-radius: 50%;
   border: none;
   background: rgba(245, 245, 243, 0.92);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1911,7 +1914,6 @@ html {
     overflow-x: auto;
     padding-bottom: 1rem;
     -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
   }
   
   .profile-sidebar-nav::-webkit-scrollbar {
@@ -1938,6 +1940,7 @@ html {
 .cart-title { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.04em; margin: 0; }
 .cart-subtitle { font-size: 0.9rem; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
 .cart-empty-state { padding: 4rem 0; text-align: center; border-top: 1px solid rgba(0,0,0,0.1); }
+.cart-empty-link { background: #111; color: #fff; display: inline-block; margin-top: 2rem; }
 .cart-content-grid { display: grid; grid-template-columns: 1fr 380px; gap: 4rem; align-items: start; }
 .cart-item-row { display: flex; gap: 1.5rem; padding: 2rem 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
 .cart-item-row:first-child { padding-top: 0; }
@@ -1949,6 +1952,7 @@ html {
 .cart-item-remove { background: none; border: none; color: #888; cursor: pointer; padding: 0.2rem; transition: color 0.2s; }
 .cart-item-remove:hover { color: #111; }
 .cart-item-meta { font-size: 0.85rem; color: #666; margin-top: 0.5rem; display: flex; align-items: center; }
+.cart-color-dot { width: 10px; height: 10px; margin-left: 4px; display: inline-block; flex-shrink: 0; }
 .cart-item-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
 .cart-qty-selector { display: flex; align-items: center; border: 1px solid rgba(0,0,0,0.1); border-radius: 2rem; padding: 0.3rem 0.5rem; }
 .cart-qty-selector button { background: none; border: none; cursor: pointer; padding: 0.3rem; display: flex; align-items: center; justify-content: center; color: #111; }
@@ -1962,4 +1966,6 @@ html {
 .cart-summary-total { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; color: #111; margin-bottom: 2rem; }
 .cart-checkout-btn { width: 100%; background: #111; color: #fff; border: none; border-radius: 3rem; padding: 1.2rem; font-size: 0.95rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.3s, transform 0.2s; }
 .cart-checkout-btn:hover { background: #000; transform: scale(1.02); }
+.cart-login-hint { font-size: 0.75rem; color: #888; text-align: center; margin-top: 1rem; }
+.cart-login-link { text-decoration: underline; color: #111; }
 @media (max-width: 768px) { .cart-content-grid { grid-template-columns: 1fr; gap: 2rem; } .cart-summary-box { position: static; } }

@@ -1,12 +1,11 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { ArrowUpRight } from "lucide-react";
+import styles from "./CatalogueWaveSection.module.css";
 
 const RANDOM_POOL = [
-  "#6b4423", // Earth Brown
-  "#8da38a", // Sage
   "#7a7a7a", // Vintage Grey
   "#333333", // Charcoal
   "#2b4c7e", // Blue
@@ -17,7 +16,7 @@ const RANDOM_POOL = [
 const WHITE = "#e8e8e8"; // White
 
 export default function CatalogueWaveSection() {
-  const [blobColors, setBlobColors] = useState([WHITE, WHITE, "#8da38a", "#6b4423"]);
+  const [blobColors, setBlobColors] = useState([WHITE, WHITE, "#7a7a7a", "#333333"]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -29,31 +28,12 @@ export default function CatalogueWaveSection() {
   }, []);
 
   return (
-    <section className="catalogue-wave-section" style={{ padding: "0 4rem", margin: "14rem 0 2rem", position: "relative", zIndex: 10 }}>
-      <div className="wave-image-container" style={{ height: "55vh", minHeight: "550px", position: "relative" }}>
+    <section className={`catalogue-wave-section ${styles.catalogueWaveSection}`}>
+      <div className={`wave-image-container ${styles.catalogueWaveImageContainer}`}>
         
         {/* Animated Wave Logic Embedded (Exact Replica of AnimatedWave.tsx logic) */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            overflow: "hidden",
-            backgroundColor: "#161616",
-            transition: "background-color 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: "-20%",
-              width: "140%",
-              height: "140%",
-              filter: "blur(80px) saturate(140%)",
-              transform: "translateZ(0)",
-            }}
-          >
+        <div className={styles.catalogueWaveBackdrop}>
+          <div className={styles.catalogueWaveInner}>
             {/* Blob 1 - White 1 */}
             <motion.div
               animate={{
@@ -161,31 +141,11 @@ export default function CatalogueWaveSection() {
           />
 
           {/* Noise Overlay */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              opacity: 0.1,
-              backgroundImage: "url('data:image/svg+xml;utf8,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')",
-              mixBlendMode: "overlay",
-              pointerEvents: "none",
-            }}
-          />
+          <div className={styles.catalogueWaveNoise} />
         </div>
 
         {/* Immersion: Giant Background Text */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 5,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            pointerEvents: "none",
-          }}
-        >
+        <div className={styles.catalogueWaveTextLayer}>
           <motion.h1
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 0.07, scale: 1 }}
@@ -204,20 +164,7 @@ export default function CatalogueWaveSection() {
         </div>
 
         {/* Content Overlay */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 10,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            padding: "3rem",
-            background: "linear-gradient(180deg, rgba(22,22,22,0.2), rgba(22,22,22,0.4))",
-          }}
-        >
+        <div className={styles.catalogueWaveContent}>
           <motion.span
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -269,29 +216,15 @@ export default function CatalogueWaveSection() {
           </motion.p>
 
           <motion.button
-            className="buy-now-btn"
+            className={styles.catalogueWaveButton}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => {
               document.getElementById("catalogue-grid")?.scrollIntoView({ behavior: "smooth" });
             }}
-            style={{
-              background: "#fff",
-              color: "#111",
-              border: "none",
-              padding: "1rem 2.5rem",
-              borderRadius: "2rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.8rem",
-              fontSize: "0.9rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-            }}
           >
             Shop Now
-            <span className="arrow-circle" style={{ borderColor: "#111" }}>
+            <span className={styles.catalogueWaveArrowCircle}>
               <ArrowUpRight size={14} color="#111" />
             </span>
           </motion.button>

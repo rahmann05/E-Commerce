@@ -22,16 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable}`}>
-      <body
-        style={{
-          margin: 0,
-          padding: 0,
-          fontFamily: "var(--font-inter), system-ui, sans-serif",
-          overflowX: "hidden",
-          WebkitFontSmoothing: "antialiased",
-          MozOsxFontSmoothing: "grayscale",
-        }}
-      >
+      <body>
         <AuthProvider>
           <CartProvider>{children}</CartProvider>
         </AuthProvider>

@@ -3,14 +3,15 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import MultiColorWave from "../../features/MultiColorWave";
+import styles from "./AboutCTA.module.css";
 
 const MotionLink = motion.create(Link);
 
 export default function AboutCTA() {
   return (
-    <section style={{ position: "relative", padding: "10vh 0", overflow: "hidden" }}>
+    <section className={styles.aboutCtaSection}>
       <MultiColorWave />
-      <div style={{ position: "relative", zIndex: 10, textAlign: "center", padding: "10rem 2rem" }}>
+      <div className={styles.aboutCtaContent}>
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -26,14 +27,7 @@ export default function AboutCTA() {
           Craft Your Essential.
         </motion.h2>
         
-        <p style={{ 
-          marginTop: "1.5rem", 
-          fontSize: "1.2rem", 
-          color: "rgba(255,255,255,0.7)", 
-          maxWidth: "600px", 
-          marginInline: "auto",
-          fontWeight: 400
-        }}>
+        <p className={styles.aboutCtaDescription}>
           Join the community of those who value quality over quantity. 
           Your perfect wardrobe starts here.
         </p>
