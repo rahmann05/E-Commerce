@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
+import styles from "./MultiColorWave.module.css";
 
 const CLOTHING_COLORS = [
   "#e8e8e8", // White
@@ -26,27 +27,12 @@ export default function MultiColorWave() {
   }, []);
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        backgroundColor: currentColors[0],
-        transition: "background-color 3s ease-in-out",
-      }}
+    <motion.div
+      className={styles.waveRoot}
+      animate={{ backgroundColor: currentColors[0] }}
+      transition={{ duration: 3, ease: "easeInOut" }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: "-20%",
-          width: "140%",
-          height: "140%",
-          filter: "blur(100px) saturate(150%)",
-          transform: "translateZ(0)",
-        }}
-      >
+      <div className={styles.waveInner}>
         {/* Blob 1 */}
         <motion.div
           animate={{
@@ -136,16 +122,7 @@ export default function MultiColorWave() {
       </div>
 
       {/* Noise Overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.05,
-          backgroundImage: "url('data:image/svg+xml;utf8,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')",
-          mixBlendMode: "overlay",
-          pointerEvents: "none",
-        }}
-      />
-    </div>
+      <div className={styles.waveNoise} />
+    </motion.div>
   );
 }

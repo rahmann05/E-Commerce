@@ -2,7 +2,6 @@
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef } from "react";
-import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import GlowOrb from "@/components/ui/GlowOrb";
 
@@ -96,37 +95,19 @@ export default function CatalogueParallaxBanner() {
           transition={{ duration: 0.7, delay: 0.7 }}
           style={{ marginTop: "2rem" }}
         >
-          <Link
-            href="#catalogue-grid"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.8rem",
-              padding: "0.75rem 2rem",
-              borderRadius: "3rem",
-              background: "rgba(255,255,255,0.1)",
-              backdropFilter: "blur(12px)",
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: "0.85rem",
-              fontWeight: 600,
-              border: "1px solid rgba(255,255,255,0.15)",
-              transition: "all 0.4s ease",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.2)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.1)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)";
+          <motion.button
+            className="buy-now-btn"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => {
+              document.getElementById("catalogue-grid")?.scrollIntoView({ behavior: "smooth" });
             }}
           >
             Shop Now
-            <span style={{ display: "flex" }}>
-              <ArrowUpRight size={15} />
+            <span className="arrow-circle">
+              <ArrowUpRight size={14} />
             </span>
-          </Link>
+          </motion.button>
         </motion.div>
       </motion.div>
     </div>

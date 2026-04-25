@@ -39,7 +39,7 @@ export default function CatalogueProductCard({ product, onClick }: Props) {
           sizes="(max-width: 768px) 50vw, 33vw"
         />
 
-        {/* Hover shine */}
+        {/* Hover shine — same as landing page ProductCard */}
         <motion.div
           animate={{ opacity: hovered ? 1 : 0 }}
           transition={{ duration: 0.4 }}
@@ -47,7 +47,7 @@ export default function CatalogueProductCard({ product, onClick }: Props) {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.04) 100%)",
+              "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.03) 100%)",
             pointerEvents: "none",
             zIndex: 2,
           }}
