@@ -35,12 +35,12 @@ export async function POST(request: Request) {
     // If payment_type is provided, try Core API first for direct charge
     if (payment_type) {
       try {
-        let parameter: any = {
+        const parameter = {
           payment_type,
           transaction_details,
           item_details: items,
           customer_details,
-        };
+        } as Record<string, unknown>; // Using Record here because Midtrans payload is dynamic
 
         if (payment_type === "bank_transfer") {
           parameter.bank_transfer = { bank: bank || "bca" };
@@ -58,8 +58,9 @@ export async function POST(request: Request) {
           method: "core",
           ...chargeResponse
         });
-      } catch (coreError: any) {
-        console.warn("Core API Charge failed, falling back to Snap:", coreError.message);
+      } catch (coreError: unknown) {
+        const msg = coreError instanceof Error ? coreError.message : "Unknown error";
+        console.warn("Core API Charge failed, falling back to Snap:", msg);
         // If Core API fails (e.g. channel not activated), we fall back to Snap below
       }
     }
@@ -82,12 +83,13 @@ export async function POST(request: Request) {
       redirect_url: transaction.redirect_url,
     });
 
-  } catch (error: any) {
-    console.error("Midtrans API Error:", error.message || error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Midtrans API Error:", msg);
     return NextResponse.json({ 
       success: false,
       error: "Gagal memproses pembayaran.", 
-      details: error.message || "Unknown error",
+      details: msg,
       key_prefix: (process.env.MIDTRANS_SERVER_KEY || "").substring(0, 7) + "..."
     }, { status: 500 });
   }

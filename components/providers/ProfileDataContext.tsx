@@ -55,6 +55,7 @@ export interface ProfileOrder {
   total: number;
   shipping: number;
   items: ProfileOrderItem[];
+  address?: ProfileAddress;
 }
 
 export interface WishlistItem {

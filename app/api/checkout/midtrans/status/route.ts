@@ -29,12 +29,13 @@ export async function GET(request: Request) {
       ...statusResponse
     });
 
-  } catch (error: any) {
-    console.error("Midtrans Status API Error:", error.message || error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Midtrans Status API Error:", msg);
     return NextResponse.json({ 
       success: false, 
       error: "Gagal mengambil status pembayaran.",
-      details: error.message 
+      details: msg
     }, { status: 500 });
   }
 }

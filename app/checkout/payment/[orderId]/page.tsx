@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Copy, CheckCircle2, Clock, ArrowLeft, RefreshCw, ExternalLink } from "lucide-react";
+import { CheckCircle2, Clock, ArrowLeft, RefreshCw } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useProfileData } from "@/components/providers/ProfileDataContext";
@@ -36,14 +36,10 @@ interface MidtransStatus {
 
 export default function PaymentStatusPage() {
   const params = useParams();
-  const router = useRouter();
   const { user } = useAuth();
   const { orders } = useProfileData();
   const orderId = params.orderId as string;
   
-  // Get method from query params
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-
   const [status, setStatus] = useState<MidtransStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,13 +47,10 @@ export default function PaymentStatusPage() {
 
   // Find the order in local context
   const localOrder = useMemo(() => {
-    const found = orders.find(o => String(o.id) === String(orderId));
-    console.log("Searching for order:", orderId, "Found:", found ? "Yes" : "No");
-    return found;
+    return orders.find(o => String(o.id) === String(orderId));
   }, [orders, orderId]);
 
   const fetchStatus = async (isRetry = false) => {
-    // Only set loading on first attempt
     if (!isRetry) setLoading(true);
     
     try {
@@ -68,7 +61,6 @@ export default function PaymentStatusPage() {
         setStatus(data);
         setLoading(false);
       } else if (!isRetry) {
-        // If not found in Midtrans, try to initiate the charge
         await initiateCharge();
       } else {
         setError(data.error || "Gagal mengambil data pembayaran.");
@@ -86,13 +78,10 @@ export default function PaymentStatusPage() {
 
   const initiateCharge = async () => {
     if (!localOrder) {
-      // If we don't have the order yet, it might still be refreshing
-      console.log("Local order not found, will retry in 1.5s...");
       setTimeout(() => {
         if (!status && !error) fetchStatus(true);
       }, 1500);
       
-      // Also stop loading after a while if still not found
       setTimeout(() => {
         if (loading && !status && !error) {
           setError("Pesanan tidak ditemukan. Mohon cek daftar pesanan Anda.");
@@ -105,8 +94,6 @@ export default function PaymentStatusPage() {
     try {
       const methodKey = new URLSearchParams(window.location.search).get("method") || "bca_va";
       const methodObj = PAYMENT_METHODS[methodKey];
-
-      console.log("Initiating charge for order:", orderId, "Method:", methodKey);
 
       const itemsSum = localOrder.items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
       const diff = localOrder.total - (itemsSum + localOrder.shipping);
@@ -150,14 +137,7 @@ export default function PaymentStatusPage() {
       if (data.success) {
         setStatus(data);
       } else {
-        // If Core API failed, it might have returned a Snap token as fallback
-        if (data.method === "snap" && data.redirect_url) {
-           // If we got a snap fallback, we might need to show it or redirect
-           // But user wanted dedicated page, so let's try to show the status if available
-           setError("Metode pembayaran ini memerlukan aktivasi tambahan di Midtrans. Mohon pilih metode lain atau hubungi admin.");
-        } else {
-          setError(data.error || "Gagal memulai pembayaran.");
-        }
+        setError(data.error || "Gagal memulai pembayaran.");
       }
     } catch (err) {
       console.error("Charge initiation error:", err);
@@ -171,7 +151,7 @@ export default function PaymentStatusPage() {
     if (orderId) {
       fetchStatus();
     }
-  }, [orderId, orders.length]); // Re-run if orders length changes
+  }, [orderId, orders.length]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -218,12 +198,12 @@ export default function PaymentStatusPage() {
     }).format(numericPrice);
   };
 
-  if (loading || (!status && !error)) {
+  if (loading) {
     return (
-      <div className="payment-status-page">
-        <div className="payment-container" style={{ textAlign: "center" }}>
-          <RefreshCw className="animate-spin" size={48} style={{ margin: "0 auto 1.5rem", color: "#111", opacity: 0.2 }} />
-          <p style={{ color: "#666", fontSize: "0.9rem" }}>Menyiapkan instruksi pembayaran...</p>
+      <div className="payment-status-page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+        <div style={{ textAlign: "center" }}>
+          <RefreshCw className="animate-spin" size={48} color="#111" style={{ margin: "0 auto 1.5rem", opacity: 0.2 }} />
+          <p>Memuat status pembayaran...</p>
         </div>
       </div>
     );
@@ -231,7 +211,7 @@ export default function PaymentStatusPage() {
 
   if (error && !status) {
     return (
-      <div className="payment-status-page">
+      <div className="payment-status-page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
         <div className="payment-container" style={{ textAlign: "center" }}>
           <h1 style={{ color: "#ef4444", fontSize: "1.5rem", marginBottom: "1rem" }}>Oops!</h1>
           <p style={{ color: "#666", marginBottom: "2rem" }}>{error}</p>
@@ -243,9 +223,11 @@ export default function PaymentStatusPage() {
     );
   }
 
-  const isSettled = status?.transaction_status === "settlement" || status?.transaction_status === "capture";
-  const isPending = status?.transaction_status === "pending";
-  const isFailed = ["deny", "cancel", "expire"].includes(status?.transaction_status || "");
+  if (!status) return null;
+
+  const isSettled = status.transaction_status === "settlement" || status.transaction_status === "capture";
+  const isPending = status.transaction_status === "pending";
+  const isFailed = ["deny", "cancel", "expire"].includes(status.transaction_status);
 
   const getStatusLabel = () => {
     if (isSettled) return "Pembayaran Berhasil";
@@ -295,7 +277,6 @@ export default function PaymentStatusPage() {
             )}
           </div>
 
-          {/* New Shipping Address Section */}
           {localOrder && (
             <div className="payment-address-section">
               <h3>Alamat Pengiriman</h3>

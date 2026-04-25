@@ -218,6 +218,43 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Fetch couriers when coordinates change or selected address changes
+  useEffect(() => {
+    if (isAddingNewAddress) {
+      if (newLat !== null && newLng !== null) {
+        fetchCouriers(newLat, newLng, newCity || "Jakarta Pusat");
+      } else {
+        setCouriers([]);
+        setSelectedCourier("");
+      }
+    } else if (selectedAddress) {
+      const addr = addresses.find(a => a.id === selectedAddress);
+      if (addr) {
+        if (addr.latitude && addr.longitude) {
+          fetchCouriers(addr.latitude, addr.longitude, addr.city || "Jakarta Pusat");
+        } else {
+          // Fallback geocode if old address doesn't have coordinates
+          const query = [addr.district, addr.city, addr.province].filter(Boolean).join(", ");
+          if (query) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=id`)
+              .then(res => res.json())
+              .then(data => {
+                if (data && data.length > 0) {
+                  fetchCouriers(parseFloat(data[0].lat), parseFloat(data[0].lon), addr.city || "Jakarta Pusat");
+                } else {
+                  // Fallback to store coordinates
+                  fetchCouriers(-6.1805, 106.8284, addr.city || "Jakarta Pusat");
+                }
+              })
+              .catch(() => fetchCouriers(-6.1805, 106.8284, addr.city || "Jakarta Pusat"));
+          } else {
+             fetchCouriers(-6.1805, 106.8284, addr.city || "Jakarta Pusat");
+          }
+        }
+      }
+    }
+  }, [isAddingNewAddress, newLat, newLng, newCity, selectedAddress, addresses, fetchCouriers]);
+
   const handleLocationSelect = async (address: string, lat: number, lng: number, rawAddr: any, postalCode: string) => {
     changeSourceRef.current = 'map';
     setIsTypingAddress(false);
@@ -225,9 +262,6 @@ export default function CheckoutPage() {
     setNewLng(lng);
     setNewLine1(address);
     setNewPostalCode(postalCode);
-    
-    // Auto-fetch couriers based on selected location
-    fetchCouriers(lat, lng, rawAddr.city || rawAddr.locality || "Jakarta Pusat");
 
     // Sync Dropdowns using our Field-Agnostic engine
     let currentProvinces = provinces;
@@ -236,17 +270,30 @@ export default function CheckoutPage() {
       setProvinces(currentProvinces);
     }
 
-    // Direct population from map data (No more complex matching!)
-    const prov = rawAddr.state || rawAddr.region || "";
-    const city = rawAddr.city || rawAddr.county || rawAddr.municipality || "";
-    const dist = rawAddr.suburb || rawAddr.district || rawAddr.village || rawAddr.town || "";
+    // 1. Helper to translate English map terms to Indonesian
+    const translateMapTerm = (s: string) => {
+      if (!s) return "";
+      return s
+        .replace(/\bSouth\b/g, "Selatan")
+        .replace(/\bNorth\b/g, "Utara")
+        .replace(/\bWest\b/g, "Barat")
+        .replace(/\bEast\b/g, "Timur")
+        .replace(/\bCentral\b/g, "Pusat")
+        .replace(/\bProvince\b/g, "Provinsi")
+        .replace(/\bRegency\b/g, "Kabupaten")
+        .replace(/\bSpecial Region of\b/g, "Daerah Istimewa")
+        .replace(/\bCapital City District of\b/g, "DKI")
+        .trim();
+    };
+
+    // 2. Direct population with translation
+    const prov = translateMapTerm(rawAddr.state || rawAddr.region || "");
+    const city = translateMapTerm(rawAddr.city || rawAddr.county || rawAddr.municipality || "");
+    const dist = translateMapTerm(rawAddr.suburb || rawAddr.district || rawAddr.village || rawAddr.town || "");
 
     setNewProvince(prov);
     setNewCity(city);
     setNewDistrict(dist);
-
-    // Still fetch couriers using the city name string
-    fetchCouriers(lat, lng, city || "Jakarta Pusat");
   };
 
   const handleSaveAddress = async () => {
@@ -424,7 +471,7 @@ export default function CheckoutPage() {
                       <span style={{fontWeight: 400, color: "#555"}}>{selectedAddrObj.phone}</span>
                     </div>
                     <div className="checkout-address-text">
-                      {selectedAddrObj.line1}, {selectedAddrObj.city}, {selectedAddrObj.postalCode}, {selectedAddrObj.country}
+                      {selectedAddrObj.line1}, {selectedAddrObj.city}, {selectedAddrObj.postalCode}
                       {selectedAddrObj.isPrimary && <span className="checkout-address-badge">Utama</span>}
                     </div>
                   </div>

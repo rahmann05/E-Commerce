@@ -78,7 +78,7 @@ export default function ProfilePage() {
       router.replace("/login");
     }
   }, [user, isLoading, router, isMounted]);
-
+  if (!user || !isMounted) return null;
 
   const handleSaveProfile = (payload: { name: string; phone: string }) => {
     updateUser({ name: payload.name, phone: payload.phone });

@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const orderId = params.id;
+  const { id: orderId } = await params;
 
   try {
     const order = await prisma.order.findUnique({
@@ -31,12 +31,13 @@ export async function GET(
       data: order
     });
 
-  } catch (error: any) {
-    console.error("Fetch Order API Error:", error.message || error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Fetch Order API Error:", msg);
     return NextResponse.json({ 
       success: false, 
       error: "Gagal mengambil data pesanan.",
-      details: error.message 
+      details: msg 
     }, { status: 500 });
   }
 }

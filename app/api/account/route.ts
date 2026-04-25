@@ -123,7 +123,7 @@ async function getSnapshot(userId: string) {
       })) ?? [],
     wishlist:
       user?.wishlistItems.map((item) => ({
-        productId: Number(item.productId),
+        productId: item.productId,
         name: item.productName,
         image: item.productImage,
         price: Number(item.productPrice),
@@ -157,116 +157,116 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as {
-    action: string;
-    userId: string;
-    [key: string]: unknown;
-  };
-  const { action, userId } = body;
-  if (!action || !userId) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
-
-  await ensureUserExists(userId);
-  await ensureVoucherSeed(userId);
-
-  if (action === "saveProfileInfo") {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { name: String(body.name ?? ""), phone: String(body.phone ?? "") },
-    });
-  } else if (action === "addAddress") {
-    await prisma.address.updateMany({ where: { userId }, data: { isDefault: false } });
-    await prisma.address.create({
-      data: {
-        userId,
-        label: String(body.label ?? "Alamat"),
-        recipient: String(body.recipient ?? "Penerima"),
-        phone: String(body.phone ?? "-"),
-        line1: String(body.line1 ?? ""),
-        district: String(body.district ?? ""),
-        city: String(body.city ?? ""),
-        province: String(body.province ?? ""),
-        postalCode: String(body.postalCode ?? ""),
-        latitude: body.latitude ? Number(body.latitude) : null,
-        longitude: body.longitude ? Number(body.longitude) : null,
-        isDefault: true,
-      },
-    });
-  } else if (action === "updateAddress") {
-    const payload = (body.payload ?? {}) as Record<string, unknown>;
-    const isPrimary = Boolean(payload.isPrimary);
-    if (isPrimary) {
-      await prisma.address.updateMany({ where: { userId }, data: { isDefault: false } });
+  try {
+    const body = (await req.json()) as {
+      action: string;
+      userId: string;
+      [key: string]: unknown;
+    };
+    const { action, userId } = body;
+    if (!action || !userId) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-    await prisma.address.update({
-      where: { id: String(body.id) },
-      data: {
-        label: payload.label ? String(payload.label) : undefined,
-        recipient: payload.recipient ? String(payload.recipient) : undefined,
-        phone: payload.phone ? String(payload.phone) : undefined,
-        line1: payload.line1 ? String(payload.line1) : undefined,
-        district: payload.district ? String(payload.district) : undefined,
-        city: payload.city ? String(payload.city) : undefined,
-        province: payload.province ? String(payload.province) : undefined,
-        postalCode: payload.postalCode ? String(payload.postalCode) : undefined,
-        latitude: payload.latitude ? Number(payload.latitude) : undefined,
-        longitude: payload.longitude ? Number(payload.longitude) : undefined,
-        isDefault: isPrimary || undefined,
-      },
-    });
-  } else if (action === "removeAddress") {
-    await prisma.address.deleteMany({ where: { id: String(body.id), userId } });
-  } else if (action === "addPaymentMethod") {
-    await prisma.paymentMethod.updateMany({ where: { userId }, data: { isDefault: false } });
-    await prisma.paymentMethod.create({
-      data: {
-        userId,
-        type: "VIRTUAL_ACCOUNT",
-        provider: String(body.label ?? "Bank"),
-        accountNumber: String(body.accountNumber ?? ""),
-        accountName: String(body.accountName ?? ""),
-        accountMasked: String(body.accountNumber ?? "").slice(-4),
-        isDefault: true,
-      },
-    });
-    await prisma.user.update({
-      where: { id: userId },
-      data: { paymentPreference: String(body.label ?? "") },
-    });
-  } else if (action === "removePaymentMethod") {
-    await prisma.paymentMethod.deleteMany({ where: { id: String(body.id), userId } });
-  } else if (action === "toggleWishlistItem") {
-    const item = (body.item ?? {}) as Record<string, unknown>;
-    const productId = String(item.productId ?? "");
-    const existing = await prisma.wishlistItem.findUnique({
-      where: { userId_productId: { userId, productId } },
-    });
-    if (existing) {
-      await prisma.wishlistItem.delete({ where: { userId_productId: { userId, productId } } });
-    } else {
-      await prisma.wishlistItem.create({
+
+    await ensureUserExists(userId);
+    await ensureVoucherSeed(userId);
+
+    if (action === "saveProfileInfo") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { name: String(body.name ?? ""), phone: String(body.phone ?? "") },
+      });
+    } else if (action === "addAddress") {
+      await prisma.address.updateMany({ where: { userId }, data: { isDefault: false } });
+      await prisma.address.create({
         data: {
           userId,
-          productId,
-          productName: String(item.name ?? ""),
-          productImage: String(item.image ?? ""),
-          productPrice: new Prisma.Decimal(Number(item.price ?? 0)),
-          category: String(item.category ?? ""),
+          label: String(body.label ?? "Alamat"),
+          recipient: String(body.recipient ?? "Penerima"),
+          phone: String(body.phone ?? "-"),
+          line1: String(body.line1 ?? ""),
+          district: String(body.district ?? ""),
+          city: String(body.city ?? ""),
+          province: String(body.province ?? ""),
+          postalCode: String(body.postalCode ?? ""),
+          latitude: body.latitude !== undefined ? Number(body.latitude) : null,
+          longitude: body.longitude !== undefined ? Number(body.longitude) : null,
+          isDefault: true,
         },
       });
-    }
-  } else if (action === "removeWishlistItem") {
-    await prisma.wishlistItem.deleteMany({
-      where: { userId, productId: String(body.productId ?? "") },
-    });
-  } else if (action === "markNotificationRead") {
-    await prisma.notification.updateMany({
-      where: { id: String(body.id), userId },
-      data: { readAt: new Date() },
-    });
-  } else if (action === "createOrder") {
-    try {
+    } else if (action === "updateAddress") {
+      const payload = (body.payload ?? {}) as Record<string, unknown>;
+      const isPrimary = Boolean(payload.isPrimary);
+      if (isPrimary) {
+        await prisma.address.updateMany({ where: { userId }, data: { isDefault: false } });
+      }
+      await prisma.address.update({
+        where: { id: String(body.id) },
+        data: {
+          label: payload.label ? String(payload.label) : undefined,
+          recipient: payload.recipient ? String(payload.recipient) : undefined,
+          phone: payload.phone ? String(payload.phone) : undefined,
+          line1: payload.line1 ? String(payload.line1) : undefined,
+          district: payload.district ? String(payload.district) : undefined,
+          city: payload.city ? String(payload.city) : undefined,
+          province: payload.province ? String(payload.province) : undefined,
+          postalCode: payload.postalCode ? String(payload.postalCode) : undefined,
+          latitude: payload.latitude !== undefined ? Number(payload.latitude) : undefined,
+          longitude: payload.longitude !== undefined ? Number(payload.longitude) : undefined,
+          isDefault: isPrimary || undefined,
+        },
+      });
+    } else if (action === "removeAddress") {
+      await prisma.address.deleteMany({ where: { id: String(body.id), userId } });
+    } else if (action === "addPaymentMethod") {
+      await prisma.paymentMethod.updateMany({ where: { userId }, data: { isDefault: false } });
+      await prisma.paymentMethod.create({
+        data: {
+          userId,
+          type: "VIRTUAL_ACCOUNT",
+          provider: String(body.label ?? "Bank"),
+          accountNumber: String(body.accountNumber ?? ""),
+          accountName: String(body.accountName ?? ""),
+          accountMasked: String(body.accountNumber ?? "").slice(-4),
+          isDefault: true,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { paymentPreference: String(body.label ?? "") },
+      });
+    } else if (action === "removePaymentMethod") {
+      await prisma.paymentMethod.deleteMany({ where: { id: String(body.id), userId } });
+    } else if (action === "toggleWishlistItem") {
+      const item = (body.item ?? {}) as Record<string, unknown>;
+      const productId = String(item.productId ?? "");
+      const existing = await prisma.wishlistItem.findUnique({
+        where: { userId_productId: { userId, productId } },
+      });
+      if (existing) {
+        await prisma.wishlistItem.delete({ where: { userId_productId: { userId, productId } } });
+      } else {
+        await prisma.wishlistItem.create({
+          data: {
+            userId,
+            productId,
+            productName: String(item.name ?? ""),
+            productImage: String(item.image ?? ""),
+            productPrice: new Prisma.Decimal(Number(item.price ?? 0)),
+            category: String(item.category ?? ""),
+          },
+        });
+      }
+    } else if (action === "removeWishlistItem") {
+      await prisma.wishlistItem.deleteMany({
+        where: { userId, productId: String(body.productId ?? "") },
+      });
+    } else if (action === "markNotificationRead") {
+      await prisma.notification.updateMany({
+        where: { id: String(body.id), userId },
+        data: { readAt: new Date() },
+      });
+    } else if (action === "createOrder") {
       const items = (body.items ?? []) as Record<string, unknown>[];
       const subtotal = items.reduce(
         (acc, item) => acc + Number(item.price ?? 0) * Number(item.quantity ?? 1),
@@ -304,13 +304,17 @@ export async function POST(req: NextRequest) {
           message: "Silakan selesaikan pembayaran Anda untuk memproses pesanan.",
         },
       });
-    } catch (err: any) {
-      console.error("CRITICAL ERROR in createOrder:", err);
-      return NextResponse.json({ error: "Gagal membuat pesanan di database.", details: err.message }, { status: 500 });
     }
-  }
 
-  const data = await getSnapshot(userId);
-  return NextResponse.json({ data });
+    const data = await getSnapshot(userId);
+    return NextResponse.json({ data });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    console.error("Account API POST Error:", msg);
+    return NextResponse.json({ 
+      error: "Gagal memproses permintaan akun.", 
+      details: msg 
+    }, { status: 500 });
+  }
 }
 

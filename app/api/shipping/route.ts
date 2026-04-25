@@ -71,8 +71,9 @@ export async function POST(request: Request) {
       city
     });
 
-  } catch (error: any) {
-    console.error("Shipping API error:", error);
-    return NextResponse.json({ error: "Sistem Ekspedisi Gagal", details: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Shipping API error:", msg);
+    return NextResponse.json({ error: "Sistem Ekspedisi Gagal", details: msg }, { status: 500 });
   }
 }

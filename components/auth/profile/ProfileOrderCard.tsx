@@ -15,13 +15,15 @@ export interface MockOrder {
   details: string; // e.g., "Size: M · Color: Sage Green · Qty: 1"
   imageUrl: string;
   total: string;
-  status: "delivered" | "processing" | "shipped";
+  status: "delivered" | "processing" | "shipped" | "awaiting_payment" | "cancelled";
 }
 
 const STATUS_LABELS: Record<MockOrder["status"], string> = {
   delivered: "Terkirim",
   processing: "Diproses",
   shipped: "Dikirim",
+  awaiting_payment: "Menunggu Pembayaran",
+  cancelled: "Dibatalkan",
 };
 
 interface ProfileOrderCardProps {

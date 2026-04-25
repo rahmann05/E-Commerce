@@ -137,10 +137,24 @@ export function ProfileAddressView({
       setProvinces(currentProvinces);
     }
 
-    // Direct population from map data (Simple and stable!)
-    const prov = rawAddr.state || rawAddr.region || "";
-    const city = rawAddr.city || rawAddr.county || rawAddr.municipality || "";
-    const dist = rawAddr.suburb || rawAddr.district || rawAddr.village || rawAddr.town || "";
+    const translateMapTerm = (s: string) => {
+      if (!s) return "";
+      return s
+        .replace(/\bSouth\b/g, "Selatan")
+        .replace(/\bNorth\b/g, "Utara")
+        .replace(/\bWest\b/g, "Barat")
+        .replace(/\bEast\b/g, "Timur")
+        .replace(/\bCentral\b/g, "Pusat")
+        .replace(/\bProvince\b/g, "Provinsi")
+        .replace(/\bRegency\b/g, "Kabupaten")
+        .replace(/\bSpecial Region of\b/g, "Daerah Istimewa")
+        .replace(/\bCapital City District of\b/g, "DKI")
+        .trim();
+    };
+
+    const prov = translateMapTerm(rawAddr.state || rawAddr.region || "");
+    const city = translateMapTerm(rawAddr.city || rawAddr.county || rawAddr.municipality || "");
+    const dist = translateMapTerm(rawAddr.suburb || rawAddr.district || rawAddr.village || rawAddr.town || "");
 
     setFormData(prev => ({ 
       ...prev, 

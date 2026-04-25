@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
+import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
+// Trigger IDE refresh - OrderStatus should be AWAITING_PAYMENT
 export async function POST(request: Request) {
   try {
     const notificationJson = await request.json();
@@ -23,20 +25,20 @@ export async function POST(request: Request) {
 
     console.log(`Transaction notification received. Order ID: ${orderId}. Status: ${transactionStatus}. Fraud Status: ${fraudStatus}`);
 
-    let newStatus: "AWAITING_PAYMENT" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" = "AWAITING_PAYMENT";
+    let newStatus: OrderStatus = OrderStatus.AWAITING_PAYMENT;
 
     if (transactionStatus === "capture") {
       if (fraudStatus === "challenge") {
-        newStatus = "AWAITING_PAYMENT";
+        newStatus = OrderStatus.AWAITING_PAYMENT;
       } else if (fraudStatus === "accept") {
-        newStatus = "PROCESSING";
+        newStatus = OrderStatus.PROCESSING;
       }
     } else if (transactionStatus === "settlement") {
-      newStatus = "PROCESSING";
+      newStatus = OrderStatus.PROCESSING;
     } else if (transactionStatus === "cancel" || transactionStatus === "deny" || transactionStatus === "expire") {
-      newStatus = "CANCELLED";
+      newStatus = OrderStatus.CANCELLED;
     } else if (transactionStatus === "pending") {
-      newStatus = "AWAITING_PAYMENT";
+      newStatus = OrderStatus.AWAITING_PAYMENT;
     }
 
     // Update the database
@@ -47,12 +49,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: "Notification handled successfully" });
 
-  } catch (error: any) {
-    console.error("Midtrans Notification Error:", error.message || error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Midtrans Notification Error:", msg);
     return NextResponse.json({ 
       success: false, 
       error: "Gagal memproses notifikasi.",
-      details: error.message 
+      details: msg 
     }, { status: 500 });
   }
 }
