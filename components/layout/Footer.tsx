@@ -20,9 +20,33 @@ export default function Footer({ noAnimation = false }: FooterProps) {
   const scale = useSpring(rawScale, { stiffness: 60, damping: 20 });
 
   const links = [
-    { title: "Shop", items: ["Tees", "Hoodies", "Pants", "Accessories"] },
-    { title: "Company", items: ["About", "Careers", "Press", "Sustainability"] },
-    { title: "Support", items: ["FAQ", "Returns", "Shipping", "Contact"] },
+    {
+      title: "Shop",
+      items: [
+        { label: "Tees", href: "/catalogue?category=tees" },
+        { label: "Hoodies", href: "/catalogue?category=outerwear" },
+        { label: "Pants", href: "/catalogue?category=jeans" },
+        { label: "Accessories", href: "/catalogue?category=accessories" },
+      ],
+    },
+    {
+      title: "Company",
+      items: [
+        { label: "About", href: "/about" },
+        { label: "Careers", href: "/about#team" },
+        { label: "Press", href: "/about#story" },
+        { label: "Sustainability", href: "/about#values" },
+      ],
+    },
+    {
+      title: "Support",
+      items: [
+        { label: "FAQ", href: "/profile?tab=notifications" },
+        { label: "Returns", href: "/profile?tab=orders" },
+        { label: "Shipping", href: "/profile?tab=orders" },
+        { label: "Contact", href: "/profile?tab=overview" },
+      ],
+    },
   ];
 
   return (
@@ -87,8 +111,8 @@ export default function Footer({ noAnimation = false }: FooterProps) {
 
             {col.items.map((item) => (
               <Link
-                key={item}
-                href="#"
+                key={item.label}
+                href={item.href}
                 style={{
                   display: "block",
                   marginBottom: "0.6rem",
@@ -104,7 +128,7 @@ export default function Footer({ noAnimation = false }: FooterProps) {
                   (e.currentTarget.style.color = "rgba(255,255,255,0.4)")
                 }
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </motion.div>

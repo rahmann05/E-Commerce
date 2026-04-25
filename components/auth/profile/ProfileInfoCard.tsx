@@ -8,20 +8,35 @@
 import { useState } from "react";
 import type { SessionUser } from "@/lib/mock-users";
 import { motion } from "framer-motion";
+import { useProfileData } from "@/components/providers/ProfileDataContext";
+
 interface ProfileInfoCardProps {
   user: SessionUser;
 }
 
 export default function ProfileInfoCard({ user }: ProfileInfoCardProps) {
+  const { saveProfileInfo, phone } = useProfileData();
   const [formData, setFormData] = useState({
     firstName: user.name.split(" ")[0] || "",
     lastName: user.name.split(" ")[1] || "",
-    phone: user.phone || "",
+    phone: phone || user.phone || "",
   });
+  const [status, setStatus] = useState<string | null>(null);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Profil berhasil diperbarui! (Demo)");
+
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    if (!fullName) {
+      setStatus("Nama tidak boleh kosong.");
+      return;
+    }
+
+    saveProfileInfo({
+      name: fullName,
+      phone: formData.phone,
+    });
+    setStatus("Profil berhasil diperbarui.");
   };
 
   return (
@@ -79,6 +94,12 @@ export default function ProfileInfoCard({ user }: ProfileInfoCardProps) {
         >
           Simpan Perubahan
         </motion.button>
+
+        {status && (
+          <p style={{ marginTop: "0.75rem", fontSize: "0.82rem", color: "#666" }}>
+            {status}
+          </p>
+        )}
       </form>
     </section>
   );

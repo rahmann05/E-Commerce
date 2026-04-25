@@ -54,7 +54,7 @@ export default function EssentializedSection() {
   const yTitle = useSpring(rawYTitle, { stiffness: 60, damping: 20 });
   const yWave = useSpring(rawYWave, { stiffness: 60, damping: 20 });
   const yCards = useSpring(rawYCards, { stiffness: 60, damping: 20 });
-  const yInnerTitle = useTransform([yTitle, yWave], ([title, wave]: any) => title - wave);
+  const yInnerTitle = useTransform([yTitle, yWave], ([title, wave]) => title - wave);
 
   const title = "Essentialized";
   const letters = title.split("");
@@ -71,15 +71,15 @@ export default function EssentializedSection() {
       >
         <div className="main-navbar">
           <div style={{ display: "flex", gap: "2.5rem" }}>
-            <Link href="#">Male</Link>
+            <Link href="/catalogue?category=tees">Male</Link>
             <Link href="/about">About Us</Link>
           </div>
           <Link href="/" className="brand">
             Novure
           </Link>
           <div style={{ display: "flex", gap: "2.5rem" }}>
-            <Link href="#">Wishlist</Link>
-            <Link href="#">My Cart</Link>
+            <Link href="/profile?tab=wishlist">Wishlist</Link>
+            <Link href="/cart">My Cart</Link>
           </div>
         </div>
       </motion.div>

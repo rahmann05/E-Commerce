@@ -66,7 +66,7 @@ export default function ProductDetailModal({ product, onClose }: Props) {
     const color = selectedColor || (product.colors.length > 0 ? product.colors[0] : "Default");
 
     addItem({
-      productId: product.id,
+      productId: String(product.id),
       name: product.name,
       price: product.price,
       imageUrl: product.image,

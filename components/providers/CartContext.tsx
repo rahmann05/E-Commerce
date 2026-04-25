@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react";
 import { useAuth } from "./AuthContext";
 
 export interface CartItem {
@@ -25,25 +33,51 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const CART_STORAGE_KEY = "novure_cart_store_v1";
+
+type CartStore = Record<string, CartItem[]>;
+
+function loadCartStore(): CartStore {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as CartStore;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [cartStore, setCartStore] = useState<CartStore>(loadCartStore);
 
-  // Optional: clear cart on logout, or load from localStorage based on user
-  // For this mock, we'll just clear the cart when the user logs out.
+  const cartKey = user?.id ?? "guest";
+
+  const items = useMemo(() => cartStore[cartKey] ?? [], [cartStore, cartKey]);
+
   useEffect(() => {
-    if (!user) {
-      setItems([]);
-    }
-  }, [user]);
+    if (typeof window === "undefined") return;
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartStore));
+  }, [cartStore]);
+
+  const setActiveItems = useCallback(
+    (updater: (current: CartItem[]) => CartItem[]) => {
+      setCartStore((prev) => {
+        const current = prev[cartKey] ?? [];
+        return { ...prev, [cartKey]: updater(current) };
+      });
+    },
+    [cartKey]
+  );
 
   const addItem = (item: Omit<CartItem, "id">) => {
-    setItems((prev) => {
+    setActiveItems((prev) => {
       const id = `${item.productId}-${item.size}-${item.color}`;
       const existing = prev.find((i) => i.id === id);
       if (existing) {
-        return prev.map((i) => 
+        return prev.map((i) =>
           i.id === id ? { ...i, quantity: i.quantity + item.quantity } : i
         );
       }
@@ -52,15 +86,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setActiveItems((prev) => prev.filter((i) => i.id !== id));
   };
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) return;
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
+    setActiveItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, quantity } : i))
+    );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => setActiveItems(() => []);
 
   const cartTotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
   const cartCount = items.reduce((count, item) => count + item.quantity, 0);

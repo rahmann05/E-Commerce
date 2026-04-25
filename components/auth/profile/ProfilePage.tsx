@@ -7,6 +7,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthContext";
 import ProfileHero from "./ProfileHero";
 import ProfileInfoCard from "./ProfileInfoCard";
@@ -21,10 +22,28 @@ import {
 
 type TabId = "overview" | "orders" | "wishlist" | "reviews" | "address" | "payment" | "vouchers" | "security" | "notifications";
 
+function toTab(value: string | null): TabId {
+  const allowed: TabId[] = [
+    "overview",
+    "orders",
+    "wishlist",
+    "reviews",
+    "address",
+    "payment",
+    "vouchers",
+    "security",
+    "notifications",
+  ];
+  return allowed.includes(value as TabId) ? (value as TabId) : "overview";
+}
+
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabId>(() =>
+    toTab(searchParams.get("tab"))
+  );
 
   // If not loading and no user, redirect to login
   useEffect(() => {

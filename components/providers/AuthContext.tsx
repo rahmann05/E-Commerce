@@ -9,13 +9,12 @@
 import {
   createContext,
   useContext,
-  useState,
-  useEffect,
+  useSyncExternalStore,
   useCallback,
   type ReactNode,
 } from "react";
 import type { SessionUser } from "@/lib/mock-users";
-import { getSession, clearSession, loginUser } from "@/lib/auth";
+import { getSession, clearSession, loginUser, setSession, subscribeSession } from "@/lib/auth";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,6 +26,9 @@ interface AuthContextValue {
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateProfile: (
+    fields: Partial<Pick<SessionUser, "name" | "phone" | "address" | "paymentPreference">>
+  ) => void;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -36,14 +38,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Hydrate from localStorage on mount (client only)
-  useEffect(() => {
-    setUser(getSession());
-    setIsLoading(false);
-  }, []);
+  const user = useSyncExternalStore(subscribeSession, getSession, () => null);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -51,7 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if ("error" in result) {
         return { success: false, error: result.error };
       }
-      setUser(result.user);
       return { success: true };
     },
     []
@@ -59,11 +53,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearSession();
-    setUser(null);
   }, []);
 
+  const updateProfile = useCallback(
+    (
+      fields: Partial<Pick<SessionUser, "name" | "phone" | "address" | "paymentPreference">>
+    ) => {
+      const current = getSession();
+      if (!current) return;
+      setSession({ ...current, ...fields });
+    },
+    []
+  );
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading: false, login, logout, updateProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );
