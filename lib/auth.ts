@@ -8,18 +8,11 @@ import type { SessionUser } from "@/lib/mock-users";
 import { verifyCredentials } from "@/lib/mock-users";
 
 const SESSION_KEY = "novure_session";
-const SESSION_EVENT = "novure:session-changed";
-
-function notifySessionChange(): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(SESSION_EVENT));
-}
 
 /** Persist a user session into localStorage */
 export function setSession(user: SessionUser): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  notifySessionChange();
 }
 
 /** Read the current session; returns null if not logged in */
@@ -38,21 +31,17 @@ export function getSession(): SessionUser | null {
 export function clearSession(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SESSION_KEY);
-  notifySessionChange();
 }
 
-/** Subscribe to auth session updates in the current tab and cross-tab. */
-export function subscribeSession(callback: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-
-  const handler = () => callback();
-  window.addEventListener("storage", handler);
-  window.addEventListener(SESSION_EVENT, handler);
-
-  return () => {
-    window.removeEventListener("storage", handler);
-    window.removeEventListener(SESSION_EVENT, handler);
-  };
+/** Merge partial user fields into current session */
+export function patchSession(
+  patch: Partial<SessionUser>
+): SessionUser | null {
+  const current = getSession();
+  if (!current) return null;
+  const next = { ...current, ...patch };
+  setSession(next);
+  return next;
 }
 
 /** Attempt to log in; returns session user or error string */
@@ -62,12 +51,25 @@ export async function loginUser(
 ): Promise<{ user: SessionUser } | { error: string }> {
   // Small artificial delay to feel realistic
   await new Promise((r) => setTimeout(r, 600));
-
-  const user = verifyCredentials(email, password);
-  if (!user) {
-    return { error: "Email atau password salah. Silakan coba lagi." };
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      return { error: data.error ?? "Gagal login." };
+    }
+    const data = (await res.json()) as { user: SessionUser };
+    setSession(data.user);
+    return { user: data.user };
+  } catch {
+    const user = verifyCredentials(email, password);
+    if (!user) {
+      return { error: "Email atau password salah. Silakan coba lagi." };
+    }
+    setSession(user);
+    return { user };
   }
-
-  setSession(user);
-  return { user };
 }

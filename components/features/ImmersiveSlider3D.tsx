@@ -176,7 +176,16 @@ export default function ImmersiveSlider3D({ items }: ImmersiveSlider3DProps) {
             fontSize: "1.1rem",
             transition: "all 0.3s ease"
           }}
-          whilehover={{ scale: 1.1, background: "#111", color: "#fff" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.1)";
+            e.currentTarget.style.background = "#111";
+            e.currentTarget.style.color = "#fff";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "#111";
+          }}
         >
           ←
         </button>
@@ -197,7 +206,16 @@ export default function ImmersiveSlider3D({ items }: ImmersiveSlider3DProps) {
             fontSize: "1.1rem",
             transition: "all 0.3s ease"
           }}
-          whilehover={{ scale: 1.1, background: "#111", color: "#fff" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.1)";
+            e.currentTarget.style.background = "#111";
+            e.currentTarget.style.color = "#fff";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "#111";
+          }}
         >
           →
         </button>

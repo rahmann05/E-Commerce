@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
 import type { CatalogueProduct } from "@/components/catalogue/types";
 import type { CategoryFilter } from "@/lib/actions/catalogue";
 import CatalogueFilterSidebar from "@/components/catalogue/CatalogueFilterSidebar";
@@ -13,25 +12,8 @@ interface Props {
   initialProducts: CatalogueProduct[];
 }
 
-function toCategoryFilter(value: string | null): CategoryFilter {
-  const allowed: CategoryFilter[] = [
-    "all",
-    "tees",
-    "jeans",
-    "accessories",
-    "outerwear",
-  ];
-
-  return allowed.includes(value as CategoryFilter)
-    ? (value as CategoryFilter)
-    : "all";
-}
-
 export default function CatalogueClient({ initialProducts }: Props) {
-  const searchParams = useSearchParams();
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>(() =>
-    toCategoryFilter(searchParams.get("category"))
-  );
+  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "default">("default");
   const [selectedProduct, setSelectedProduct] = useState<CatalogueProduct | null>(null);
 

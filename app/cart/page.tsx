@@ -2,12 +2,11 @@
 
 import { useCart } from "@/components/providers/CartContext";
 import { useAuth } from "@/components/providers/AuthContext";
-import { useProfileData } from "@/components/providers/ProfileDataContext";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, X, ArrowRight } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -22,9 +21,8 @@ function getActualPrice(price: number): number {
 }
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, updateQuantity, removeItem } = useCart();
   const { user } = useAuth();
-  const { placeOrderFromCart } = useProfileData();
   const router = useRouter();
 
   const actualCartTotal = items.reduce((total, item) => total + getActualPrice(item.price) * item.quantity, 0);
@@ -32,23 +30,6 @@ export default function CartPage() {
   // Shipping flat fee
   const shippingFee = items.length > 0 ? 50000 : 0;
   const finalTotal = actualCartTotal + shippingFee;
-
-  const handleCheckout = () => {
-    if (!user) {
-      router.push("/login?redirect=/cart");
-      return;
-    }
-
-    const order = placeOrderFromCart({
-      items,
-      shipping: shippingFee,
-      total: finalTotal,
-    });
-
-    if (!order) return;
-    clearCart();
-    router.push("/profile?tab=orders");
-  };
 
   return (
     <>
@@ -94,7 +75,7 @@ export default function CartPage() {
                     {/* Details */}
                     <div className="cart-item-details">
                       <div className="cart-item-header">
-                        <Link href="/catalogue" className="cart-item-name">{item.name}</Link>
+                        <Link href={`/catalogue/${item.productId}`} className="cart-item-name">{item.name}</Link>
                         <button
                           type="button"
                           className="cart-item-remove"
@@ -169,7 +150,17 @@ export default function CartPage() {
                   <span>Rp{formatPrice(finalTotal)}</span>
                 </div>
 
-                <button type="button" className="cart-checkout-btn" onClick={handleCheckout}>
+                <button
+                  className="cart-checkout-btn"
+                  type="button"
+                  onClick={() => {
+                    if (!user) {
+                      router.push("/login?redirect=/cart");
+                      return;
+                    }
+                    router.push("/checkout");
+                  }}
+                >
                   <span>Lanjutkan ke Pembayaran</span>
                   <ArrowRight size={16} />
                 </button>

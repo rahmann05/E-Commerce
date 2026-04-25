@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import CursorTrail from "../features/CursorTrail";
 import GlowOrb from "../ui/GlowOrb";
 import ScrollIndicator from "../ui/ScrollIndicator";

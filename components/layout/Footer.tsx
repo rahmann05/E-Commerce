@@ -23,28 +23,26 @@ export default function Footer({ noAnimation = false }: FooterProps) {
     {
       title: "Shop",
       items: [
-        { label: "Tees", href: "/catalogue?category=tees" },
-        { label: "Hoodies", href: "/catalogue?category=outerwear" },
-        { label: "Pants", href: "/catalogue?category=jeans" },
-        { label: "Accessories", href: "/catalogue?category=accessories" },
+        { label: "Catalogue", href: "/catalogue" },
+        { label: "Cart", href: "/cart" },
+        { label: "Profile", href: "/profile" },
+        { label: "Login", href: "/login" },
       ],
     },
     {
       title: "Company",
       items: [
         { label: "About", href: "/about" },
-        { label: "Careers", href: "/about#team" },
-        { label: "Press", href: "/about#story" },
-        { label: "Sustainability", href: "/about#values" },
+        { label: "Home", href: "/" },
       ],
     },
     {
       title: "Support",
       items: [
-        { label: "FAQ", href: "/profile?tab=notifications" },
-        { label: "Returns", href: "/profile?tab=orders" },
-        { label: "Shipping", href: "/profile?tab=orders" },
-        { label: "Contact", href: "/profile?tab=overview" },
+        { label: "FAQ", href: "/about" },
+        { label: "Returns", href: "/about" },
+        { label: "Shipping", href: "/about" },
+        { label: "Contact", href: "/about" },
       ],
     },
   ];

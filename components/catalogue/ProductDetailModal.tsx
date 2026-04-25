@@ -4,10 +4,11 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { X, ArrowUpRight, Star } from "lucide-react";
+import { X, ArrowUpRight, Star, Heart } from "lucide-react";
 import type { CatalogueProduct } from "./types";
 import { useAuth } from "@/components/providers/AuthContext";
 import { useCart } from "@/components/providers/CartContext";
+import { useProfileData } from "@/components/providers/ProfileDataContext";
 
 interface Props {
   product: CatalogueProduct | null;
@@ -46,10 +47,12 @@ function expandSizeRange(range: string): string[] {
 export default function ProductDetailModal({ product, onClose }: Props) {
   const { user } = useAuth();
   const { addItem } = useCart();
+  const { toggleWishlistItem, isWishlisted } = useProfileData();
   const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [wishlistMessage, setWishlistMessage] = useState<string | null>(null);
 
   function handleAdd() {
     if (!user) {
@@ -85,6 +88,7 @@ export default function ProductDetailModal({ product, onClose }: Props) {
       ? expandSizeRange(product.sizes)
       : product.sizes.split(",").map((s) => s.trim())
     : [];
+  const wished = product ? isWishlisted(product.id) : false;
 
   return (
     <AnimatePresence>
@@ -268,6 +272,37 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                     </span>
                   )}
                 </motion.button>
+                <button
+                  type="button"
+                  className="pill-btn"
+                  style={{ marginTop: "0.7rem", width: "100%" }}
+                  onClick={() => {
+                    if (!product) return;
+                    if (!user) {
+                      onClose();
+                      router.push("/login?redirect=/catalogue");
+                      return;
+                    }
+                    toggleWishlistItem({
+                      productId: product.id,
+                      name: product.name,
+                      image: product.image,
+                      price: product.price,
+                      category: product.category,
+                    });
+                    setWishlistMessage(
+                      wished ? "Dihapus dari wishlist." : "Ditambahkan ke wishlist."
+                    );
+                  }}
+                >
+                  <Heart size={14} style={{ marginRight: "0.4rem" }} />
+                  {wished ? "Hapus dari Wishlist" : "Tambah ke Wishlist"}
+                </button>
+                {wishlistMessage && (
+                  <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#777" }}>
+                    {wishlistMessage}
+                  </div>
+                )}
 
                 <div
                   style={{

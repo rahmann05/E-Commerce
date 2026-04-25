@@ -7,40 +7,29 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import type { ProfileOrder } from "@/components/providers/ProfileDataContext";
 
-const STATUS_LABELS: Record<ProfileOrder["status"], string> = {
+export interface MockOrder {
+  id: string;
+  date: string;
+  productName: string;
+  details: string; // e.g., "Size: M · Color: Sage Green · Qty: 1"
+  imageUrl: string;
+  total: string;
+  status: "delivered" | "processing" | "shipped";
+}
+
+const STATUS_LABELS: Record<MockOrder["status"], string> = {
   delivered: "Terkirim",
   processing: "Diproses",
   shipped: "Dikirim",
 };
 
 interface ProfileOrderCardProps {
-  order: ProfileOrder;
+  order: MockOrder;
   delay?: number;
 }
 
-function formatPrice(value: number): string {
-  return `Rp${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
-}
-
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
 export default function ProfileOrderCard({ order, delay = 0 }: ProfileOrderCardProps) {
-  const primaryItem = order.items[0];
-  const itemCount = order.items.length;
-
-  if (!primaryItem) return null;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -70,8 +59,8 @@ export default function ProfileOrderCard({ order, delay = 0 }: ProfileOrderCardP
           }}
         >
           <Image
-            src={primaryItem.imageUrl}
-            alt={primaryItem.name}
+            src={order.imageUrl}
+            alt={order.productName}
             fill
             style={{ objectFit: "cover" }}
           />
@@ -87,14 +76,13 @@ export default function ProfileOrderCard({ order, delay = 0 }: ProfileOrderCardP
               textTransform: "uppercase"
             }}
           >
-            Pesanan #{order.id} · {formatDate(order.createdAt)}
+            Pesanan #{order.id} · {order.date}
           </div>
           <div style={{ fontSize: "1rem", fontWeight: 700, color: "#111", marginBottom: "0.3rem" }}>
-            {primaryItem.name}
+            {order.productName}
           </div>
           <div style={{ fontSize: "0.8rem", color: "#888" }}>
-            Size: {primaryItem.size} · Color: {primaryItem.color} · Qty: {primaryItem.quantity}
-            {itemCount > 1 ? ` · +${itemCount - 1} item lainnya` : ""}
+            {order.details}
           </div>
         </div>
       </div>
@@ -109,7 +97,7 @@ export default function ProfileOrderCard({ order, delay = 0 }: ProfileOrderCardP
             color: "#111",
           }}
         >
-          {formatPrice(order.total)}
+          {order.total}
         </div>
         <span className={`profile-order-status status-${order.status}`}>
           {STATUS_LABELS[order.status]}

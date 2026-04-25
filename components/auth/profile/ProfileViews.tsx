@@ -1,198 +1,198 @@
 "use client";
 
-import type { SessionUser } from "@/lib/mock-users";
-import { useState } from "react";
-import { useProfileData } from "@/components/providers/ProfileDataContext";
+import { useState, type FormEvent } from "react";
+import type {
+  ProfileAddress,
+  ProfileNotification,
+  ProfilePaymentMethod,
+  ProfileVoucher,
+  WishlistItem,
+} from "@/components/providers/ProfileDataContext";
 
-export function ProfileAddressView({ user }: { user: SessionUser }) {
-  const { addresses, addAddress, updateAddress, removeAddress } = useProfileData();
-
-  const handleAddAddress = () => {
-    const label = window.prompt("Label alamat (contoh: Rumah, Kantor)", "Rumah");
-    if (!label) return;
-
-    const line1 = window.prompt("Alamat lengkap", user.address ?? "");
-    if (!line1) return;
-
-    const recipient = window.prompt("Nama penerima", user.name) ?? user.name;
-    const phone = window.prompt("Nomor telepon", user.phone ?? "") ?? user.phone ?? "";
-
-    addAddress({ label, line1, recipient, phone });
-  };
-
-  const handleEditAddress = (id: string, currentLine: string) => {
-    const line1 = window.prompt("Perbarui alamat", currentLine);
-    if (!line1) return;
-    updateAddress(id, { line1 });
-  };
+export function ProfileAddressView({
+  addresses,
+  onSaveAddress,
+  onRemoveAddress,
+}: {
+  addresses: ProfileAddress[];
+  onSaveAddress: (payload: {
+    label: string;
+    recipient: string;
+    phone: string;
+    line1: string;
+  }) => void;
+  onRemoveAddress: (id: string) => void;
+}) {
+  const [address, setAddress] = useState("");
 
   return (
     <section>
       <p className="profile-section-title">Alamat Pengiriman</p>
       <div style={{ maxWidth: "600px" }}>
-        {addresses.length === 0 ? (
-          <div style={{ padding: "1.5rem", borderBottom: "1px solid rgba(0,0,0,0.1)", fontSize: "0.88rem", color: "#777" }}>
-            Belum ada alamat tersimpan.
-          </div>
-        ) : (
-          addresses.map((address) => (
-            <div
-              key={address.id}
-              style={{
-                padding: "1.5rem",
-                borderBottom: "1px solid rgba(0,0,0,0.1)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: "1rem",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.4rem" }}>
-                  {address.label} {address.isPrimary ? "(Utama)" : ""}
-                </div>
-                <div style={{ fontSize: "0.85rem", color: "#666", lineHeight: 1.5 }}>
-                  {address.recipient}
-                  <br />
-                  {address.line1}
-                  <br />
-                  {address.phone}
-                </div>
+        {addresses.map((item) => (
+          <div
+            key={item.id}
+            style={{
+              padding: "1rem 0",
+              borderBottom: "1px solid rgba(0,0,0,0.08)",
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "1rem",
+            }}
+          >
+            <div style={{ fontSize: "0.85rem", color: "#444", lineHeight: 1.6 }}>
+              <div style={{ fontWeight: 700, color: "#111" }}>
+                {item.label} {item.isPrimary ? "(Utama)" : ""}
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", alignItems: "flex-end" }}>
-                {!address.isPrimary && (
-                  <button
-                    type="button"
-                    onClick={() => updateAddress(address.id, { isPrimary: true })}
-                    style={{ background: "none", border: "none", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer", textDecoration: "underline" }}
-                  >
-                    Jadikan Utama
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleEditAddress(address.id, address.line1)}
-                  style={{ background: "none", border: "none", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer", textDecoration: "underline" }}
-                >
-                  Ubah
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeAddress(address.id)}
-                  style={{ background: "none", border: "none", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer", color: "#8a2d2d" }}
-                >
-                  Hapus
-                </button>
-              </div>
+              <div>{item.recipient}</div>
+              <div>{item.line1}</div>
+              <div>{item.phone}</div>
             </div>
-          ))
-        )}
-        
-        <button
-          type="button"
-          className="pill-btn"
-          onClick={handleAddAddress}
-          style={{ borderColor: "rgba(0,0,0,0.1)", color: "#111", fontSize: "0.8rem", fontWeight: 600, marginTop: "2rem" }}
-        >
-          + Tambah Alamat Baru
-        </button>
+            <button
+              type="button"
+              className="pill-btn"
+              style={{ height: "fit-content", fontSize: "0.72rem" }}
+              onClick={() => onRemoveAddress(item.id)}
+            >
+              Hapus
+            </button>
+          </div>
+        ))}
+
+        <div className="auth-input-wrapper" style={{ marginTop: "1.2rem" }}>
+          <label className="auth-input-label">Tambah Alamat Baru</label>
+          <textarea
+            className="auth-input"
+            rows={3}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Masukkan alamat lengkap..."
+            style={{ resize: "vertical" }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: "0.8rem", marginTop: "0.8rem" }}>
+          <button
+            type="button"
+            className="pill-btn"
+            style={{ background: "#111", color: "#fff", border: "none" }}
+            onClick={() => {
+              const line1 = address.trim();
+              if (!line1) return;
+              onSaveAddress({
+                label: "Alamat Baru",
+                recipient: "Penerima",
+                phone: "-",
+                line1,
+              });
+              setAddress("");
+            }}
+          >
+            Simpan Alamat
+          </button>
+        </div>
       </div>
     </section>
   );
 }
 
-export function ProfilePaymentView({ user }: { user: SessionUser }) {
-  const { paymentMethods, addPaymentMethod, removePaymentMethod } = useProfileData();
-
-  const handleAddMethod = () => {
-    const label = window.prompt(
-      "Nama metode pembayaran",
-      user.paymentPreference ?? "Virtual Account"
-    );
-    if (!label) return;
-
-    const details = window.prompt(
-      "Detail metode (contoh: **** 1234 / BCA VA)",
-      "Metode utama"
-    );
-    if (!details) return;
-
-    addPaymentMethod({ label, details });
-  };
+export function ProfilePaymentView({
+  paymentMethods,
+  onSavePayment,
+  onRemovePayment,
+}: {
+  paymentMethods: ProfilePaymentMethod[];
+  onSavePayment: (paymentPreference: string) => void;
+  onRemovePayment: (id: string) => void;
+}) {
+  const [payment, setPayment] = useState("BCA Virtual Account");
 
   return (
     <section>
       <p className="profile-section-title">Metode Pembayaran</p>
       <div style={{ maxWidth: "600px" }}>
-        {paymentMethods.length === 0 ? (
-          <div style={{ padding: "1.5rem", borderBottom: "1px solid rgba(0,0,0,0.1)", fontSize: "0.88rem", color: "#777" }}>
-            Belum ada metode pembayaran.
-          </div>
-        ) : (
-          paymentMethods.map((method) => (
-            <div
-              key={method.id}
-              style={{
-                padding: "1.5rem",
-                borderBottom: "1px solid rgba(0,0,0,0.1)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <div style={{ width: "40px", height: "24px", background: "#f0f0f0", borderRadius: "4px" }} />
-                <div>
-                  <div style={{ fontSize: "0.85rem", fontWeight: 700 }}>{method.label}</div>
-                  <div style={{ fontSize: "0.8rem", color: "#888" }}>
-                    {method.isPrimary ? "Utama" : method.details}
-                  </div>
-                </div>
+        {paymentMethods.map((method) => (
+          <div
+            key={method.id}
+            style={{
+              padding: "0.9rem 0",
+              borderBottom: "1px solid rgba(0,0,0,0.08)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ fontSize: "0.85rem", color: "#444" }}>
+              <div style={{ fontWeight: 700, color: "#111" }}>
+                {method.label} {method.isPrimary ? "(Utama)" : ""}
               </div>
-              <button
-                type="button"
-                onClick={() => removePaymentMethod(method.id)}
-                style={{ background: "none", border: "none", fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer", textDecoration: "underline" }}
-              >
-                Hapus
-              </button>
+              <div style={{ fontSize: "0.78rem" }}>{method.details}</div>
             </div>
-          ))
-        )}
+            <button
+              type="button"
+              className="pill-btn"
+              style={{ fontSize: "0.72rem" }}
+              onClick={() => onRemovePayment(method.id)}
+            >
+              Hapus
+            </button>
+          </div>
+        ))}
 
-        <button
-          type="button"
-          className="pill-btn"
-          onClick={handleAddMethod}
-          style={{ borderColor: "rgba(0,0,0,0.1)", color: "#111", fontSize: "0.8rem", fontWeight: 600, marginTop: "2rem" }}
-        >
-          + Tambah Metode Pembayaran
-        </button>
+        <div style={{ padding: "1.5rem 0", borderBottom: "1px solid rgba(0,0,0,0.1)" }}>
+          <div className="auth-input-wrapper">
+            <label className="auth-input-label">Metode Utama</label>
+            <select
+              className="auth-input"
+              value={payment}
+              onChange={(e) => setPayment(e.target.value)}
+            >
+              <option value="BCA Virtual Account">BCA Virtual Account</option>
+              <option value="Mandiri Virtual Account">Mandiri Virtual Account</option>
+              <option value="BRI Virtual Account">BRI Virtual Account</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="COD">COD</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className="pill-btn"
+            style={{ marginTop: "1rem", background: "#111", color: "#fff", border: "none" }}
+            onClick={() => onSavePayment(payment)}
+          >
+            Tambah Metode Pembayaran
+          </button>
+        </div>
       </div>
     </section>
   );
 }
 
-export function ProfileSecurityView() {
-  const { updatePassword } = useProfileData();
+export function ProfileSecurityView({
+  onSavePassword,
+}: {
+  onSavePassword: (payload: { currentPassword: string; newPassword: string }) => boolean;
+}) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setMessage("Konfirmasi password tidak cocok.");
+      return;
+    }
 
-    const result = updatePassword({
-      currentPassword,
-      newPassword,
-      confirmPassword,
-    });
-
-    setStatus(result.message);
-
-    if (result.success) {
+    const success = onSavePassword({ currentPassword, newPassword });
+    setMessage(
+      success
+        ? "Password berhasil diperbarui (simulasi frontend)."
+        : "Password saat ini tidak valid."
+    );
+    if (success) {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -209,9 +209,9 @@ export function ProfileSecurityView() {
             type="password"
             className="auth-input"
             placeholder="••••••••"
+            required
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            required
           />
         </div>
         <div className="auth-input-wrapper">
@@ -219,9 +219,10 @@ export function ProfileSecurityView() {
           <input
             type="password"
             className="auth-input"
+            required
+            minLength={6}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            required
           />
         </div>
         <div className="auth-input-wrapper">
@@ -229,9 +230,10 @@ export function ProfileSecurityView() {
           <input
             type="password"
             className="auth-input"
+            required
+            minLength={6}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            required
           />
         </div>
         <button 
@@ -241,13 +243,126 @@ export function ProfileSecurityView() {
         >
           Perbarui Password
         </button>
-
-        {status && (
-          <p style={{ marginTop: "0.85rem", fontSize: "0.82rem", color: "#666" }}>
-            {status}
+        {message && (
+          <p style={{ marginTop: "0.8rem", fontSize: "0.8rem", color: "#666" }}>
+            {message}
           </p>
         )}
       </form>
+    </section>
+  );
+}
+
+export function ProfileWishlistView({
+  items,
+  onRemove,
+}: {
+  items: WishlistItem[];
+  onRemove: (productId: number) => void;
+}) {
+  if (items.length === 0) {
+    return (
+      <ProfileEmptyView
+        title="Daftar Keinginan"
+        message="Belum ada produk di wishlist Anda."
+      />
+    );
+  }
+
+  return (
+    <section>
+      <p className="profile-section-title">Daftar Keinginan</p>
+      <div style={{ maxWidth: "640px" }}>
+        {items.map((item) => (
+          <div
+            key={item.productId}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "1rem 0",
+              borderBottom: "1px solid rgba(0,0,0,0.08)",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "0.92rem", fontWeight: 700 }}>{item.name}</div>
+              <div style={{ fontSize: "0.78rem", color: "#777" }}>
+                {item.category} · Rp{item.price}
+              </div>
+            </div>
+            <button type="button" className="pill-btn" onClick={() => onRemove(item.productId)}>
+              Hapus
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ProfileVoucherView({ vouchers }: { vouchers: ProfileVoucher[] }) {
+  if (vouchers.length === 0) {
+    return (
+      <ProfileEmptyView
+        title="Voucher Saya"
+        message="Tidak ada voucher yang tersedia saat ini."
+      />
+    );
+  }
+  return (
+    <section>
+      <p className="profile-section-title">Voucher Saya</p>
+      {vouchers.map((voucher) => (
+        <div
+          key={voucher.id}
+          style={{ maxWidth: "620px", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "1rem 0" }}
+        >
+          <div style={{ fontSize: "0.9rem", fontWeight: 700 }}>{voucher.title}</div>
+          <div style={{ fontSize: "0.78rem", color: "#666" }}>
+            {voucher.code} · Berlaku sampai {voucher.expiresAt}
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+export function ProfileNotificationView({
+  notifications,
+  onMarkRead,
+}: {
+  notifications: ProfileNotification[];
+  onMarkRead: (id: string) => void;
+}) {
+  if (notifications.length === 0) {
+    return (
+      <ProfileEmptyView
+        title="Notifikasi"
+        message="Tidak ada notifikasi baru."
+      />
+    );
+  }
+  return (
+    <section>
+      <p className="profile-section-title">Notifikasi</p>
+      {notifications.map((notification) => (
+        <div
+          key={notification.id}
+          style={{ maxWidth: "620px", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "1rem 0" }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+            <div>
+              <div style={{ fontSize: "0.9rem", fontWeight: 700 }}>{notification.title}</div>
+              <div style={{ fontSize: "0.78rem", color: "#666" }}>{notification.message}</div>
+            </div>
+            {!notification.isRead && (
+              <button type="button" className="pill-btn" onClick={() => onMarkRead(notification.id)}>
+                Tandai Dibaca
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
     </section>
   );
 }

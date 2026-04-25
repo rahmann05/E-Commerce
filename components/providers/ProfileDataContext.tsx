@@ -2,15 +2,14 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
-  useCallback,
-  useEffect,
   type ReactNode,
 } from "react";
 import { useAuth } from "@/components/providers/AuthContext";
-import type { SessionUser } from "@/lib/mock-users";
 import type { CartItem } from "@/components/providers/CartContext";
 
 export type ProfileOrderStatus = "processing" | "shipped" | "delivered";
@@ -50,11 +49,37 @@ export interface ProfileOrder {
   items: ProfileOrderItem[];
 }
 
+export interface WishlistItem {
+  productId: number;
+  name: string;
+  image: string;
+  price: number;
+  category: string;
+}
+
+export interface ProfileVoucher {
+  id: string;
+  code: string;
+  title: string;
+  expiresAt: string;
+}
+
+export interface ProfileNotification {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
 interface UserProfileData {
   phone: string;
   addresses: ProfileAddress[];
   paymentMethods: ProfilePaymentMethod[];
   orders: ProfileOrder[];
+  wishlist: WishlistItem[];
+  vouchers: ProfileVoucher[];
+  notifications: ProfileNotification[];
 }
 
 interface ProfileDataContextValue {
@@ -62,6 +87,9 @@ interface ProfileDataContextValue {
   addresses: ProfileAddress[];
   paymentMethods: ProfilePaymentMethod[];
   orders: ProfileOrder[];
+  wishlist: WishlistItem[];
+  vouchers: ProfileVoucher[];
+  notifications: ProfileNotification[];
   saveProfileInfo: (payload: { name: string; phone: string }) => void;
   addAddress: (payload: Omit<ProfileAddress, "id" | "isPrimary">) => void;
   updateAddress: (id: string, payload: Partial<Omit<ProfileAddress, "id">>) => void;
@@ -73,6 +101,21 @@ interface ProfileDataContextValue {
     shipping: number;
     total: number;
   }) => ProfileOrder | null;
+  toggleWishlistItem: (item: WishlistItem) => void;
+  removeWishlistItem: (productId: number) => void;
+  isWishlisted: (productId: number) => boolean;
+  markNotificationRead: (id: string) => void;
+  submitCheckout: (payload: {
+    items: CartItem[];
+    shipping: number;
+    total: number;
+    addressId: string;
+    paymentMethodId: string;
+    courier: string;
+    notes?: string;
+    promoCode?: string;
+  }) => Promise<{ success: boolean; orderId?: string; message?: string }>;
+  refreshAccountData: () => Promise<void>;
   updatePassword: (payload: {
     currentPassword: string;
     newPassword: string;
@@ -80,241 +123,171 @@ interface ProfileDataContextValue {
   }) => { success: boolean; message: string };
 }
 
-const PROFILE_STORAGE_KEY = "novure_profile_data_v1";
-
-type ProfileStore = Record<string, UserProfileData>;
-
 const ProfileDataContext = createContext<ProfileDataContextValue | null>(null);
 
-function loadStore(): ProfileStore {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as ProfileStore;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function createDefaultAddress(user: SessionUser): ProfileAddress[] {
-  if (!user.address) return [];
-  return [
-    {
-      id: `addr-${user.id}-default`,
-      label: "Rumah (Utama)",
-      recipient: user.name,
-      phone: user.phone ?? "",
-      line1: user.address,
-      isPrimary: true,
-    },
-  ];
-}
-
-function createDefaultPayment(user: SessionUser): ProfilePaymentMethod[] {
-  if (!user.paymentPreference) return [];
-  return [
-    {
-      id: `pay-${user.id}-default`,
-      label: user.paymentPreference,
-      details: "Metode utama",
-      isPrimary: true,
-    },
-  ];
-}
-
-function ensurePrimaryAddress(addresses: ProfileAddress[]): ProfileAddress[] {
-  if (addresses.length === 0) return addresses;
-  if (addresses.some((a) => a.isPrimary)) return addresses;
-  return addresses.map((a, idx) => (idx === 0 ? { ...a, isPrimary: true } : a));
-}
-
-function ensurePrimaryPayment(
-  paymentMethods: ProfilePaymentMethod[]
-): ProfilePaymentMethod[] {
-  if (paymentMethods.length === 0) return paymentMethods;
-  if (paymentMethods.some((m) => m.isPrimary)) return paymentMethods;
-  return paymentMethods.map((m, idx) =>
-    idx === 0 ? { ...m, isPrimary: true } : m
-  );
-}
-
-function ensureUserData(
-  user: SessionUser | null,
-  data: UserProfileData | undefined
-): UserProfileData {
-  if (!user) {
-    return {
-      phone: "",
-      addresses: [],
-      paymentMethods: [],
-      orders: [],
-    };
-  }
-
-  const addresses = ensurePrimaryAddress(
-    data?.addresses?.length ? data.addresses : createDefaultAddress(user)
-  );
-  const paymentMethods = ensurePrimaryPayment(
-    data?.paymentMethods?.length
-      ? data.paymentMethods
-      : createDefaultPayment(user)
-  );
-
-  return {
-    phone: data?.phone ?? user.phone ?? "",
-    addresses,
-    paymentMethods,
-    orders: data?.orders ?? [],
-  };
-}
-
-function randomId(prefix: string): string {
-  return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
-}
+const EMPTY_DATA: UserProfileData = {
+  phone: "",
+  addresses: [],
+  paymentMethods: [],
+  orders: [],
+  wishlist: [],
+  vouchers: [],
+  notifications: [],
+};
 
 export function ProfileDataProvider({ children }: { children: ReactNode }) {
-  const { user, updateProfile } = useAuth();
-  const [store, setStore] = useState<ProfileStore>(loadStore);
+  const { user, updateUser } = useAuth();
+  const [data, setData] = useState<UserProfileData>(EMPTY_DATA);
 
-  const userKey = user?.id ?? "guest";
-
-  const userData = useMemo(
-    () => ensureUserData(user, store[userKey]),
-    [store, user, userKey]
-  );
+  const refreshAccountData = useCallback(async () => {
+    if (!user) {
+      setData(EMPTY_DATA);
+      return;
+    }
+    const res = await fetch(`/api/account?userId=${encodeURIComponent(user.id)}`);
+    if (!res.ok) return;
+    const payload = (await res.json()) as { data: UserProfileData };
+    setData(payload.data);
+  }, [user]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(store));
-  }, [store]);
+    const timer = setTimeout(() => {
+      void refreshAccountData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [refreshAccountData]);
 
-  const mutateUserData = useCallback(
-    (mutator: (current: UserProfileData) => UserProfileData) => {
-      if (!user) return;
-      setStore((prev) => {
-        const current = ensureUserData(user, prev[userKey]);
-        return { ...prev, [userKey]: mutator(current) };
+  const callMutation = useCallback(
+    async (action: string, body: Record<string, unknown>) => {
+      if (!user) return null;
+      const res = await fetch("/api/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, userId: user.id, ...body }),
       });
+      if (!res.ok) return null;
+      const payload = (await res.json()) as { data: UserProfileData };
+      setData(payload.data);
+      return payload.data;
     },
-    [user, userKey]
+    [user]
   );
 
   const saveProfileInfo = useCallback(
     ({ name, phone }: { name: string; phone: string }) => {
       if (!user) return;
-      updateProfile({ name, phone });
-      mutateUserData((current) => ({ ...current, phone }));
+      updateUser({ name, phone });
+      void callMutation("saveProfileInfo", { name, phone });
     },
-    [user, updateProfile, mutateUserData]
+    [user, updateUser, callMutation]
   );
 
   const addAddress = useCallback(
     (payload: Omit<ProfileAddress, "id" | "isPrimary">) => {
-      mutateUserData((current) => {
-        const nextAddresses = [
-          ...current.addresses.map((a) => ({ ...a, isPrimary: false })),
-          { ...payload, id: randomId("addr"), isPrimary: true },
-        ];
-        return { ...current, addresses: nextAddresses };
-      });
+      updateUser({ address: payload.line1 });
+      void callMutation("addAddress", payload);
     },
-    [mutateUserData]
+    [updateUser, callMutation]
   );
 
   const updateAddress = useCallback(
     (id: string, payload: Partial<Omit<ProfileAddress, "id">>) => {
-      mutateUserData((current) => {
-        let next = current.addresses.map((a) =>
-          a.id === id ? { ...a, ...payload } : a
-        );
-
-        if (payload.isPrimary) {
-          next = next.map((a) => ({ ...a, isPrimary: a.id === id }));
-        }
-
-        return { ...current, addresses: ensurePrimaryAddress(next) };
-      });
+      void callMutation("updateAddress", { id, payload });
     },
-    [mutateUserData]
+    [callMutation]
   );
 
   const removeAddress = useCallback(
     (id: string) => {
-      mutateUserData((current) => {
-        const remaining = current.addresses.filter((a) => a.id !== id);
-        return { ...current, addresses: ensurePrimaryAddress(remaining) };
-      });
+      void callMutation("removeAddress", { id });
     },
-    [mutateUserData]
+    [callMutation]
   );
 
   const addPaymentMethod = useCallback(
     (payload: Omit<ProfilePaymentMethod, "id" | "isPrimary">) => {
-      mutateUserData((current) => {
-        const nextMethods = [
-          ...current.paymentMethods.map((m) => ({ ...m, isPrimary: false })),
-          { ...payload, id: randomId("pay"), isPrimary: true },
-        ];
-
-        updateProfile({ paymentPreference: payload.label });
-        return { ...current, paymentMethods: nextMethods };
-      });
+      updateUser({ paymentPreference: payload.label });
+      void callMutation("addPaymentMethod", payload);
     },
-    [mutateUserData, updateProfile]
+    [updateUser, callMutation]
   );
 
   const removePaymentMethod = useCallback(
     (id: string) => {
-      mutateUserData((current) => {
-        const remaining = ensurePrimaryPayment(
-          current.paymentMethods.filter((m) => m.id !== id)
-        );
-        updateProfile({ paymentPreference: remaining[0]?.label });
-        return { ...current, paymentMethods: remaining };
-      });
+      void callMutation("removePaymentMethod", { id });
     },
-    [mutateUserData, updateProfile]
+    [callMutation]
   );
 
   const placeOrderFromCart = useCallback(
-    ({
-      items,
-      shipping,
-      total,
-    }: {
+    ({ items, shipping, total }: { items: CartItem[]; shipping: number; total: number }) => {
+      if (!user || items.length === 0) return null;
+      const address = data.addresses[0];
+      const paymentMethod = data.paymentMethods[0];
+      if (!address || !paymentMethod) return null;
+      void callMutation("createOrder", {
+        items,
+        shipping,
+        total,
+        addressId: address.id,
+        paymentMethodId: paymentMethod.id,
+        courier: "JNE Regular",
+      });
+      return {
+        id: `NVR-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        status: "processing" as const,
+        total,
+        shipping,
+        items: [],
+      };
+    },
+    [user, data.addresses, data.paymentMethods, callMutation]
+  );
+
+  const toggleWishlistItem = useCallback(
+    (item: WishlistItem) => {
+      void callMutation("toggleWishlistItem", { item });
+    },
+    [callMutation]
+  );
+
+  const removeWishlistItem = useCallback(
+    (productId: number) => {
+      void callMutation("removeWishlistItem", { productId });
+    },
+    [callMutation]
+  );
+
+  const isWishlisted = useCallback(
+    (productId: number) => data.wishlist.some((item) => item.productId === productId),
+    [data.wishlist]
+  );
+
+  const markNotificationRead = useCallback(
+    (id: string) => {
+      void callMutation("markNotificationRead", { id });
+    },
+    [callMutation]
+  );
+
+  const submitCheckout = useCallback(
+    async (payload: {
       items: CartItem[];
       shipping: number;
       total: number;
-    }): ProfileOrder | null => {
-      if (!user || items.length === 0) return null;
-
-      const order: ProfileOrder = {
-        id: `NVR-${Date.now().toString().slice(-6)}`,
-        createdAt: new Date().toISOString(),
-        status: "processing",
-        shipping,
-        total,
-        items: items.map((item) => ({
-          productId: item.productId,
-          name: item.name,
-          size: item.size,
-          color: item.color,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          imageUrl: item.imageUrl,
-        })),
-      };
-
-      mutateUserData((current) => ({
-        ...current,
-        orders: [order, ...current.orders],
-      }));
-
-      return order;
+      addressId: string;
+      paymentMethodId: string;
+      courier: string;
+      notes?: string;
+      promoCode?: string;
+    }) => {
+      if (!user) return { success: false, message: "User belum login." };
+      const next = await callMutation("createOrder", payload);
+      if (!next) return { success: false, message: "Gagal membuat pesanan." };
+      return { success: true, orderId: next.orders[0]?.id };
     },
-    [user, mutateUserData]
+    [user, callMutation]
   );
 
   const updatePassword = useCallback(
@@ -330,49 +303,61 @@ export function ProfileDataProvider({ children }: { children: ReactNode }) {
       if (!currentPassword || !newPassword || !confirmPassword) {
         return { success: false, message: "Semua field password wajib diisi." };
       }
-
       if (newPassword.length < 8) {
-        return {
-          success: false,
-          message: "Password baru minimal 8 karakter.",
-        };
+        return { success: false, message: "Password baru minimal 8 karakter." };
       }
-
       if (newPassword !== confirmPassword) {
-        return {
-          success: false,
-          message: "Konfirmasi password tidak cocok.",
-        };
+        return { success: false, message: "Konfirmasi password tidak cocok." };
       }
-
-      return {
-        success: true,
-        message: "Password berhasil diperbarui.",
-      };
+      return { success: true, message: "Password berhasil diperbarui." };
     },
     []
   );
 
-  const value: ProfileDataContextValue = {
-    phone: userData.phone,
-    addresses: userData.addresses,
-    paymentMethods: userData.paymentMethods,
-    orders: userData.orders,
-    saveProfileInfo,
-    addAddress,
-    updateAddress,
-    removeAddress,
-    addPaymentMethod,
-    removePaymentMethod,
-    placeOrderFromCart,
-    updatePassword,
-  };
-
-  return (
-    <ProfileDataContext.Provider value={value}>
-      {children}
-    </ProfileDataContext.Provider>
+  const value = useMemo<ProfileDataContextValue>(
+    () => ({
+      phone: data.phone,
+      addresses: data.addresses,
+      paymentMethods: data.paymentMethods,
+      orders: data.orders,
+      wishlist: data.wishlist,
+      vouchers: data.vouchers,
+      notifications: data.notifications,
+      saveProfileInfo,
+      addAddress,
+      updateAddress,
+      removeAddress,
+      addPaymentMethod,
+      removePaymentMethod,
+      placeOrderFromCart,
+      toggleWishlistItem,
+      removeWishlistItem,
+      isWishlisted,
+      markNotificationRead,
+      submitCheckout,
+      refreshAccountData,
+      updatePassword,
+    }),
+    [
+      data,
+      saveProfileInfo,
+      addAddress,
+      updateAddress,
+      removeAddress,
+      addPaymentMethod,
+      removePaymentMethod,
+      placeOrderFromCart,
+      toggleWishlistItem,
+      removeWishlistItem,
+      isWishlisted,
+      markNotificationRead,
+      submitCheckout,
+      refreshAccountData,
+      updatePassword,
+    ]
   );
+
+  return <ProfileDataContext.Provider value={value}>{children}</ProfileDataContext.Provider>;
 }
 
 export function useProfileData(): ProfileDataContextValue {
@@ -382,3 +367,4 @@ export function useProfileData(): ProfileDataContextValue {
   }
   return ctx;
 }
+

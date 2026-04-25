@@ -5,38 +5,25 @@
  * Grid of user info rows with editorial section label /02.
  */
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import type { SessionUser } from "@/lib/mock-users";
 import { motion } from "framer-motion";
-import { useProfileData } from "@/components/providers/ProfileDataContext";
-
 interface ProfileInfoCardProps {
   user: SessionUser;
+  onSave: (payload: { name: string; phone: string }) => void;
 }
 
-export default function ProfileInfoCard({ user }: ProfileInfoCardProps) {
-  const { saveProfileInfo, phone } = useProfileData();
+export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) {
   const [formData, setFormData] = useState({
     firstName: user.name.split(" ")[0] || "",
     lastName: user.name.split(" ")[1] || "",
-    phone: phone || user.phone || "",
+    phone: user.phone || "",
   });
-  const [status, setStatus] = useState<string | null>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-    if (!fullName) {
-      setStatus("Nama tidak boleh kosong.");
-      return;
-    }
-
-    saveProfileInfo({
-      name: fullName,
-      phone: formData.phone,
-    });
-    setStatus("Profil berhasil diperbarui.");
+    onSave({ name: fullName || user.name, phone: formData.phone });
   };
 
   return (
@@ -94,12 +81,6 @@ export default function ProfileInfoCard({ user }: ProfileInfoCardProps) {
         >
           Simpan Perubahan
         </motion.button>
-
-        {status && (
-          <p style={{ marginTop: "0.75rem", fontSize: "0.82rem", color: "#666" }}>
-            {status}
-          </p>
-        )}
       </form>
     </section>
   );

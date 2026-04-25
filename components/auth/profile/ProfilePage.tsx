@@ -5,17 +5,20 @@
  * Full profile page — dashboard sidebar layout.
  */
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthContext";
+import { useProfileData } from "@/components/providers/ProfileDataContext";
 import ProfileHero from "./ProfileHero";
 import ProfileInfoCard from "./ProfileInfoCard";
 import ProfileOrderHistory from "./ProfileOrderHistory";
 import ProfileLogoutButton from "./ProfileLogoutButton";
 import { 
   ProfileAddressView, 
+  ProfileWishlistView,
   ProfilePaymentView, 
+  ProfileVoucherView,
+  ProfileNotificationView,
   ProfileSecurityView, 
   ProfileEmptyView 
 } from "./ProfileViews";
@@ -38,12 +41,25 @@ function toTab(value: string | null): TabId {
 }
 
 export default function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateUser } = useAuth();
+  const {
+    addresses,
+    paymentMethods,
+    orders,
+    wishlist,
+    vouchers,
+    notifications,
+    addAddress,
+    removeAddress,
+    addPaymentMethod,
+    removePaymentMethod,
+    removeWishlistItem,
+    markNotificationRead,
+    updatePassword,
+  } = useProfileData();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabId>(() =>
-    toTab(searchParams.get("tab"))
-  );
+  const [activeTab, setActiveTab] = useState<TabId>(() => toTab(searchParams.get("tab")));
 
   // If not loading and no user, redirect to login
   useEffect(() => {
@@ -57,17 +73,77 @@ export default function ProfilePage() {
     return null;
   }
 
+  const handleSaveProfile = (payload: { name: string; phone: string }) => {
+    updateUser({ name: payload.name, phone: payload.phone });
+  };
+
+  const handleSaveAddress = (payload: {
+    label: string;
+    recipient: string;
+    phone: string;
+    line1: string;
+  }) => {
+    addAddress(payload);
+    updateUser({ address: payload.line1 });
+  };
+
+  const handleSavePayment = (paymentPreference: string) => {
+    addPaymentMethod({
+      label: paymentPreference,
+      details: "Metode pembayaran utama",
+    });
+    updateUser({ paymentPreference });
+  };
+
+  const handleSavePassword = (payload: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    const result = updatePassword({
+      currentPassword: payload.currentPassword,
+      newPassword: payload.newPassword,
+      confirmPassword: payload.newPassword,
+    });
+    return result.success;
+  };
+
   const renderContent = () => {
     switch (activeTab) {
-      case "overview": return <ProfileInfoCard user={user} />;
-      case "orders": return <ProfileOrderHistory />;
-      case "address": return <ProfileAddressView user={user} />;
-      case "payment": return <ProfilePaymentView user={user} />;
-      case "security": return <ProfileSecurityView />;
-      case "wishlist": return <ProfileEmptyView title="Daftar Keinginan" message="Belum ada produk di wishlist Anda." />;
+      case "overview": return <ProfileInfoCard user={user} onSave={handleSaveProfile} />;
+      case "orders": return <ProfileOrderHistory orders={orders} />;
+      case "address":
+        return (
+          <ProfileAddressView
+            addresses={addresses}
+            onSaveAddress={handleSaveAddress}
+            onRemoveAddress={removeAddress}
+          />
+        );
+      case "payment":
+        return (
+          <ProfilePaymentView
+            paymentMethods={paymentMethods}
+            onSavePayment={handleSavePayment}
+            onRemovePayment={removePaymentMethod}
+          />
+        );
+      case "security": return <ProfileSecurityView onSavePassword={handleSavePassword} />;
+      case "wishlist":
+        return (
+          <ProfileWishlistView
+            items={wishlist}
+            onRemove={removeWishlistItem}
+          />
+        );
       case "reviews": return <ProfileEmptyView title="Ulasan Saya" message="Anda belum memberikan ulasan produk." />;
-      case "vouchers": return <ProfileEmptyView title="Voucher Saya" message="Tidak ada voucher yang tersedia saat ini." />;
-      case "notifications": return <ProfileEmptyView title="Notifikasi" message="Tidak ada notifikasi baru." />;
+      case "vouchers": return <ProfileVoucherView vouchers={vouchers} />;
+      case "notifications":
+        return (
+          <ProfileNotificationView
+            notifications={notifications}
+            onMarkRead={markNotificationRead}
+          />
+        );
       default: return null;
     }
   };

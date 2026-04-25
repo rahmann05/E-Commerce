@@ -9,12 +9,12 @@
 import {
   createContext,
   useContext,
-  useSyncExternalStore,
+  useState,
   useCallback,
   type ReactNode,
 } from "react";
 import type { SessionUser } from "@/lib/mock-users";
-import { getSession, clearSession, loginUser, setSession, subscribeSession } from "@/lib/auth";
+import { getSession, clearSession, loginUser, patchSession } from "@/lib/auth";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,9 +26,7 @@ interface AuthContextValue {
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  updateProfile: (
-    fields: Partial<Pick<SessionUser, "name" | "phone" | "address" | "paymentPreference">>
-  ) => void;
+  updateUser: (patch: Partial<SessionUser>) => void;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -38,7 +36,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const user = useSyncExternalStore(subscribeSession, getSession, () => null);
+  const [user, setUser] = useState<SessionUser | null>(() => getSession());
+  const [isLoading] = useState(false);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -46,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if ("error" in result) {
         return { success: false, error: result.error };
       }
+      setUser(result.user);
       return { success: true };
     },
     []
@@ -53,23 +53,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearSession();
+    setUser(null);
   }, []);
 
-  const updateProfile = useCallback(
-    (
-      fields: Partial<Pick<SessionUser, "name" | "phone" | "address" | "paymentPreference">>
-    ) => {
-      const current = getSession();
-      if (!current) return;
-      setSession({ ...current, ...fields });
-    },
-    []
-  );
+  const updateUser = useCallback((patch: Partial<SessionUser>) => {
+    const next = patchSession(patch);
+    if (next) {
+      setUser(next);
+    }
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, isLoading: false, login, logout, updateProfile }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
