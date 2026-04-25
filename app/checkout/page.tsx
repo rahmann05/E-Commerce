@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -10,6 +10,7 @@ import Footer from "@/components/layout/Footer";
 import { useCart } from "@/components/providers/CartContext";
 import { useAuth } from "@/components/providers/AuthContext";
 import { useProfileData } from "@/components/providers/ProfileDataContext";
+import { fetchProvinces, fetchRegencies, fetchDistricts } from "@/lib/api/geography";
 import "./style.css";
 
 // Load Map dynamically to prevent SSR errors with Leaflet
@@ -24,10 +25,13 @@ function getActualPrice(price: number): number {
 }
 
 const COMMON_PAYMENTS = [
+  { id: "bca_va", label: "BCA Virtual Account", midtransId: "bank_transfer", bank: "bca" },
+  { id: "bni_va", label: "BNI Virtual Account", midtransId: "bank_transfer", bank: "bni" },
+  { id: "bri_va", label: "BRI Virtual Account", midtransId: "bank_transfer", bank: "bri" },
+  { id: "qris", label: "QRIS (Dana, OVO, LinkAja, ShopeePay)", midtransId: "qris" },
   { id: "gopay", label: "GoPay / E-Wallet", midtransId: "gopay" },
-  { id: "bca_va", label: "BCA Virtual Account", midtransId: "bca_va" },
   { id: "credit_card", label: "Kartu Kredit", midtransId: "credit_card" },
-  { id: "other", label: "Lainnya (Pilih di Midtrans)", midtransId: "" },
+  { id: "other", label: "Bank Lainnya (SeaBank, Mandiri, dll)", midtransId: "" },
 ];
 
 export default function CheckoutPage() {
@@ -35,6 +39,11 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const { items, clearCart } = useCart();
   const { addresses, addAddress, submitCheckout, refreshAccountData } = useProfileData();
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Try to find the default address, otherwise the first one
   const defaultAddressId = useMemo(() => {
@@ -44,30 +53,42 @@ export default function CheckoutPage() {
   }, [addresses]);
 
   const [selectedAddress, setSelectedAddress] = useState(defaultAddressId);
-  const [isChangingAddress, setIsChangingAddress] = useState(addresses.length === 0);
-  const [isAddingNewAddress, setIsAddingNewAddress] = useState(addresses.length === 0);
+  const [isChangingAddress, setIsChangingAddress] = useState(false);
+  const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
   
   // Default payment based on profile
   const defaultPaymentId = useMemo(() => {
-    if (!user || !user.paymentPreference) return "other";
+    if (!user || !user.paymentPreference) return "bca_va";
     const pref = user.paymentPreference.toLowerCase();
-    if (pref.includes("gopay") || pref.includes("ovo") || pref.includes("wallet")) return "gopay";
-    if (pref.includes("bca") || pref.includes("virtual")) return "bca_va";
+    if (pref.includes("gopay") || pref.includes("ovo") || pref.includes("wallet")) return "qris";
+    if (pref.includes("bca")) return "bca_va";
+    if (pref.includes("bni")) return "bni_va";
+    if (pref.includes("bri")) return "bri_va";
     if (pref.includes("kredit") || pref.includes("credit")) return "credit_card";
-    return "other";
+    return "bca_va";
   }, [user]);
 
   const [selectedPayment, setSelectedPayment] = useState(defaultPaymentId);
 
   // New Address State
-  const [newLabel, setNewLabel] = useState("");
-  const [newRecipient, setNewRecipient] = useState(user?.name || "");
+  const [newLabel, setNewLabel] = useState("Rumah");
+  const [newRecipient, setNewRecipient] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newCity, setNewCity] = useState("");
   const [newLine1, setNewLine1] = useState("");
+  const [newDistrict, setNewDistrict] = useState("");
+  const [newCity, setNewCity] = useState("");
+  const [newProvince, setNewProvince] = useState("");
+  const [newPostalCode, setNewPostalCode] = useState("");
   const [newLat, setNewLat] = useState<number | null>(null);
   const [newLng, setNewLng] = useState<number | null>(null);
   const [isTypingAddress, setIsTypingAddress] = useState(false);
+
+  // Sync recipient with user name on mount
+  useEffect(() => {
+    if (user?.name && !newRecipient) {
+      setNewRecipient(user.name);
+    }
+  }, [user, newRecipient]);
 
   // Dynamic Shipping Data
   const [couriers, setCouriers] = useState<{id:string, label:string, fee:number}[]>([]);
@@ -79,6 +100,53 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Geo Data State for Checkout Form
+  const [provinces, setProvinces] = useState<{id: string, name: string}[]>([]);
+  const [regencies, setRegencies] = useState<{id: string, name: string}[]>([]);
+  const [districts, setDistricts] = useState<{id: string, name: string}[]>([]);
+
+  const [selectedProvinceId, setSelectedProvinceId] = useState("");
+  const [selectedRegencyId, setSelectedRegencyId] = useState("");
+
+  const changeSourceRef = useRef<'map' | 'dropdown' | null>(null);
+
+  // Load Provinces
+  useEffect(() => {
+    if (isAddingNewAddress) {
+      fetchProvinces().then(setProvinces);
+    }
+  }, [isAddingNewAddress]);
+
+  // Fetch Regencies when province changes
+  useEffect(() => {
+    if (selectedProvinceId) {
+      fetchRegencies(selectedProvinceId).then(setRegencies);
+      if (changeSourceRef.current !== 'map') {
+        setSelectedRegencyId("");
+        setNewCity("");
+        setDistricts([]);
+        setNewDistrict("");
+      }
+    } else {
+      setRegencies([]);
+      setSelectedRegencyId("");
+      setDistricts([]);
+    }
+  }, [selectedProvinceId]);
+
+  // Fetch Districts when regency changes
+  useEffect(() => {
+    if (selectedRegencyId) {
+      fetchDistricts(selectedRegencyId).then(setDistricts);
+      if (changeSourceRef.current !== 'map') {
+        setNewDistrict("");
+      }
+    } else {
+      setDistricts([]);
+      setNewDistrict("");
+    }
+  }, [selectedRegencyId]);
+
   const subtotal = useMemo(
     () => items.reduce((acc, item) => acc + getActualPrice(item.price) * item.quantity, 0),
     [items]
@@ -89,7 +157,7 @@ export default function CheckoutPage() {
   }, [couriers, selectedCourier]);
 
   const discount = promoCode.trim().toUpperCase() === "WELCOME10" ? Math.floor(subtotal * 0.1) : 0;
-  const total = Math.max(subtotal + shippingFee - discount, 0);
+  const total = useMemo(() => subtotal + shippingFee, [subtotal, shippingFee]);
 
   // Set default address when loaded
   useEffect(() => {
@@ -99,6 +167,30 @@ export default function CheckoutPage() {
   }, [defaultAddressId, selectedAddress]);
 
   // Fetch Couriers whenever an address is selected or completely filled
+  const [changeSource, setChangeSource] = useState<'map' | 'dropdown' | null>(null);
+
+  // Auto-search coordinates ONLY when dropdowns are changed via DROPDOWN
+  useEffect(() => {
+    if (changeSource !== 'dropdown' || !isAddingNewAddress) return;
+
+    const query = [newDistrict, newCity, newProvince].filter(Boolean).join(", ");
+    if (!query) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=id`);
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setNewLat(parseFloat(data[0].lat));
+          setNewLng(parseFloat(data[0].lon));
+        }
+      } catch (err) {
+        console.error("Auto-geocoding failed:", err);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [newDistrict, newCity, newProvince, isAddingNewAddress, changeSource]);
+
   const fetchCouriers = useCallback(async (lat: number, lng: number, city: string) => {
     setLoadingCouriers(true);
     try {
@@ -126,69 +218,51 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!isAddingNewAddress && selectedAddress) {
-      const addr = addresses.find(a => a.id === selectedAddress);
-      if (addr) {
-        // Using real shipping, ideally we geocode the address first if we don't have coords.
-        // But for now, since it requires lat/lng, we pass dummy or if you have real city, it depends.
-        // Let's pass the real city so RajaOngkir API can use it.
-        fetchCouriers(-6.2, 106.8, addr.city || "Jakarta Pusat");
-      }
-    }
-  }, [selectedAddress, isAddingNewAddress, addresses, fetchCouriers]);
-
-  // Debounced Map geocoding when typing address
-  useEffect(() => {
-    if (!isAddingNewAddress || !newLine1 || !isTypingAddress) return;
-    const timer = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(newLine1)}`
-        );
-        const data = await response.json();
-        if (data && data.length > 0) {
-          setNewLat(parseFloat(data[0].lat));
-          setNewLng(parseFloat(data[0].lon));
-          if (!newCity && data[0].display_name) {
-            // Very naive city extraction from display_name
-            const parts = data[0].display_name.split(",");
-            if (parts.length > 1) {
-               // We just guess the city is one of the parts
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Geocoding error", error);
-      }
-      setIsTypingAddress(false);
-    }, 1200);
-
-    return () => clearTimeout(timer);
-  }, [newLine1, isAddingNewAddress, isTypingAddress, newCity]);
-
-  const handleLocationSelect = (address: string, lat: number, lng: number, city: string) => {
+  const handleLocationSelect = async (address: string, lat: number, lng: number, rawAddr: any, postalCode: string) => {
+    changeSourceRef.current = 'map';
     setIsTypingAddress(false);
-    setNewLine1(address);
     setNewLat(lat);
     setNewLng(lng);
+    setNewLine1(address);
+    setNewPostalCode(postalCode);
+    
+    // Auto-fetch couriers based on selected location
+    fetchCouriers(lat, lng, rawAddr.city || rawAddr.locality || "Jakarta Pusat");
+
+    // Sync Dropdowns using our Field-Agnostic engine
+    let currentProvinces = provinces;
+    if (currentProvinces.length === 0) {
+      currentProvinces = await fetchProvinces();
+      setProvinces(currentProvinces);
+    }
+
+    // Direct population from map data (No more complex matching!)
+    const prov = rawAddr.state || rawAddr.region || "";
+    const city = rawAddr.city || rawAddr.county || rawAddr.municipality || "";
+    const dist = rawAddr.suburb || rawAddr.district || rawAddr.village || rawAddr.town || "";
+
+    setNewProvince(prov);
     setNewCity(city);
-    fetchCouriers(lat, lng, city);
+    setNewDistrict(dist);
+
+    // Still fetch couriers using the city name string
+    fetchCouriers(lat, lng, city || "Jakarta Pusat");
   };
 
   const handleSaveAddress = async () => {
-    if (!newLabel || !newRecipient || !newPhone || !newLine1) {
-      setError("Mohon lengkapi semua field alamat.");
+    if (!newRecipient || !newPhone || !newLine1 || !newCity || !newProvince) {
+      setError("Mohon lengkapi semua field alamat utama.");
       return null;
     }
     const result = await addAddress({
-      label: newLabel,
+      label: newLabel || "Alamat",
       recipient: newRecipient,
       phone: newPhone,
       line1: newLine1,
-      city: newCity || "Unknown",
-      postalCode: "00000",
-      country: "Indonesia",
+      district: newDistrict,
+      city: newCity,
+      province: newProvince,
+      postalCode: newPostalCode || "00000",
     });
     if (result.success && result.address) {
       setIsAddingNewAddress(false);
@@ -203,61 +277,41 @@ export default function CheckoutPage() {
 
   const processPayment = async (orderId: string, finalAddressId: string) => {
     try {
-      const selectedMidtransMethod = COMMON_PAYMENTS.find(p => p.id === selectedPayment)?.midtransId;
-      const res = await fetch("/api/checkout/midtrans", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: orderId,
-          gross_amount: total,
-          items: items.map((item) => ({
-            id: item.id,
-            price: getActualPrice(item.price),
-            quantity: item.quantity,
-            name: item.name,
-          })),
-          customer_details: {
-            first_name: user?.name,
-            email: user?.email,
-          }
-        }),
+      // First, save the order to the database
+      const paymentLabel = COMMON_PAYMENTS.find(p => p.id === selectedPayment)?.label || "Midtrans";
+      const result = await submitCheckout({
+        items,
+        shipping: shippingFee,
+        total,
+        addressId: finalAddressId,
+        paymentMethodId: paymentLabel,
+        courier: couriers.find((item) => item.id === selectedCourier)?.label ?? "Pengiriman Standar",
+        notes,
+        promoCode: promoCode.trim() || undefined,
       });
-      const data = await res.json();
 
-      if (data.is_mock) {
-        alert("Simulasi Pembayaran Midtrans Berhasil!");
-        finishCheckout(orderId, finalAddressId);
-      } else if (data.token) {
-        (window as any).snap.pay(data.token, {
-          onSuccess: function (result: any) {
-            console.log("payment success", result);
-            finishCheckout(orderId, finalAddressId);
-          },
-          onPending: function (result: any) {
-            console.log("payment pending", result);
-            finishCheckout(orderId, finalAddressId);
-          },
-          onError: function (result: any) {
-            console.error("payment error", result);
-            setError("Pembayaran gagal. Silakan coba lagi.");
-            setLoading(false);
-          },
-          onClose: function () {
-            setLoading(false);
-          }
-        });
-      } else {
-        setError(data.error || "Gagal menghubungi gateway pembayaran.");
+      if (!result.success) {
+        setError(result.message ?? "Gagal menyimpan pesanan.");
         setLoading(false);
+        return;
       }
+
+      // Clear cart and refresh data
+      clearCart();
+      await refreshAccountData();
+
+      // Redirect to the dedicated payment page using the REAL order ID from database
+      const finalOrderId = result.orderId || orderId;
+      router.push(`/checkout/payment/${finalOrderId}?method=${selectedPayment}`);
+      
     } catch (err) {
       console.error(err);
-      setError("Terjadi kesalahan sistem pembayaran.");
+      setError("Terjadi kesalahan sistem saat memproses pesanan.");
       setLoading(false);
     }
   };
 
-  const finishCheckout = async (orderId: string, addressId: string) => {
+  const finishCheckout = async (orderId: string, addressId: string, redirect = true) => {
     const paymentLabel = COMMON_PAYMENTS.find(p => p.id === selectedPayment)?.label || "Midtrans";
     const result = await submitCheckout({
       items,
@@ -269,14 +323,19 @@ export default function CheckoutPage() {
       notes,
       promoCode: promoCode.trim() || undefined,
     });
-    setLoading(false);
+    
     if (!result.success) {
       setError(result.message ?? "Checkout gagal tersimpan ke database.");
+      setLoading(false);
       return;
     }
+
     clearCart();
     await refreshAccountData();
-    router.push("/profile?tab=orders");
+    
+    if (redirect) {
+      router.push("/profile?tab=orders");
+    }
   };
 
   const handleCheckout = async () => {
@@ -384,46 +443,81 @@ export default function CheckoutPage() {
                       <LocationMap onLocationSelect={handleLocationSelect} centerLat={newLat} centerLng={newLng} />
                       
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                        <input
-                          className="checkout-input"
-                          placeholder="Label (Rumah, Kantor...)"
-                          value={newLabel}
-                          onChange={(e) => setNewLabel(e.target.value)}
-                        />
-                        <input
-                          className="checkout-input"
-                          placeholder="Nama Penerima"
-                          value={newRecipient}
-                          onChange={(e) => setNewRecipient(e.target.value)}
-                        />
-                        <input
-                          className="checkout-input"
-                          placeholder="Nomor HP"
-                          value={newPhone}
-                          onChange={(e) => setNewPhone(e.target.value)}
-                        />
-                        <input
-                          className="checkout-input"
-                          placeholder="Kota"
-                          value={newCity}
-                          onChange={(e) => setNewCity(e.target.value)}
-                        />
+                        <div className="checkout-input-group">
+                          <label>Nama Penerima</label>
+                          <input className="checkout-input" value={newRecipient} onChange={(e) => setNewRecipient(e.target.value)} />
+                        </div>
+                        <div className="checkout-input-group">
+                          <label>Nomor Telepon</label>
+                          <input className="checkout-input" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+                        </div>
                       </div>
-                      <textarea
-                        className="checkout-textarea"
-                        placeholder="Alamat Lengkap (Ketik untuk pindah map)"
-                        value={newLine1}
-                        onChange={(e) => {
-                          setNewLine1(e.target.value);
-                          setIsTypingAddress(true);
-                        }}
-                      />
-                      {addresses.length > 0 && (
-                        <button type="button" onClick={() => setIsAddingNewAddress(false)} style={{ color: "#555", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", alignSelf: "flex-start", padding: "0.5rem" }}>
-                          Batal, gunakan alamat tersimpan
-                        </button>
-                      )}
-                    </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                        <div className="checkout-input-group">
+                          <label>Provinsi</label>
+                            <input 
+                              className="checkout-input" 
+                              value={newProvince} 
+                              onChange={e => {
+                                changeSourceRef.current = 'dropdown';
+                                setNewProvince(e.target.value);
+                              }}
+                              placeholder="Provinsi"
+                            />
+                          </div>
+                          <div className="checkout-input-wrapper">
+                            <label className="checkout-label">Kota / Kabupaten</label>
+                            <input 
+                              className="checkout-input" 
+                              value={newCity} 
+                              onChange={e => {
+                                changeSourceRef.current = 'dropdown';
+                                setNewCity(e.target.value);
+                              }}
+                              placeholder="Kota / Kabupaten"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="checkout-form-row">
+                          <div className="checkout-input-wrapper">
+                            <label className="checkout-label">Kecamatan</label>
+                            <input 
+                              className="checkout-input" 
+                              value={newDistrict} 
+                              onChange={e => {
+                                changeSourceRef.current = 'dropdown';
+                                setNewDistrict(e.target.value);
+                              }}
+                              placeholder="Kecamatan"
+                            />
+                          </div>
+                        </div>
+                        <div className="checkout-input-group">
+                          <label>Kode Pos</label>
+                          <input className="checkout-input" value={newPostalCode} onChange={(e) => setNewPostalCode(e.target.value)} />
+                        </div>
+
+                        <div className="checkout-input-group">
+                          <label>Alamat Lengkap</label>
+                          <textarea
+                            className="checkout-textarea"
+                            rows={2}
+                            placeholder="Jalan, No. Rumah, dll"
+                            value={newLine1}
+                            onChange={(e) => {
+                              setNewLine1(e.target.value);
+                              setIsTypingAddress(true);
+                            }}
+                          />
+                        </div>
+                        {addresses.length > 0 && (
+                          <button type="button" onClick={() => setIsAddingNewAddress(false)} style={{ color: "#555", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", alignSelf: "flex-start", padding: "0.5rem" }}>
+                            Batal, gunakan alamat tersimpan
+                          </button>
+                        )}
+                      </div>
                   ) : (
                     <div className="checkout-options">
                       {addresses.map((address) => (
@@ -439,7 +533,8 @@ export default function CheckoutPage() {
                           />
                           <div>
                             <strong>{address.recipient} | {address.phone} {address.isPrimary && <span className="checkout-address-badge">Utama</span>}</strong>
-                            <p>{address.line1}, {address.city}, {address.country}</p>
+                            <p>{address.line1}</p>
+                            <p style={{ fontSize: "0.78rem", color: "#666" }}>{address.district}, {address.city}, {address.province}, {address.postalCode}</p>
                           </div>
                         </label>
                       ))}

@@ -46,7 +46,7 @@
 }
 
 .checkout-card.address-card {
-  /* Just a bit more padding if needed */
+  padding-bottom: 2rem;
 }
 
 .checkout-card-header {
@@ -176,7 +176,19 @@
   color: #444;
 }
 
-.checkout-col-right {
+.checkout-col-right {.checkout-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.checkout-input-group label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
   text-align: right;
   font-size: 0.95rem;
   color: #111;

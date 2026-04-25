@@ -73,9 +73,12 @@ model Address {
   phone       String?
   line1       String
   line2       String?
+  district    String?
   city        String?
   province    String?
   postalCode  String?
+  latitude    Float?
+  longitude   Float?
   country     String   @default("Indonesia")
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -95,15 +98,16 @@ model PaymentMethod {
   userId          String
   type            PaymentType
   provider        String
-  accountMasked   String?
+  accountNumber   String?
   accountName     String?
+  accountMasked   String?
   isDefault       Boolean     @default(false)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 }
 
 enum OrderStatus {
-  PENDING
+  AWAITING_PAYMENT
   PROCESSING
   SHIPPED
   DELIVERED
@@ -120,7 +124,7 @@ model Order {
   notes       String?
   promoCode   String?
   totalAmount Decimal
-  status      OrderStatus @default(PENDING)
+  status      OrderStatus @default(AWAITING_PAYMENT)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { MOCK_USERS } from "@/lib/mock-users";
 
-function mapStatus(status: string): "processing" | "shipped" | "delivered" {
+function mapStatus(status: string): "awaiting_payment" | "processing" | "shipped" | "delivered" | "cancelled" {
+  if (status === "AWAITING_PAYMENT") return "awaiting_payment";
   if (status === "SHIPPED") return "shipped";
   if (status === "DELIVERED") return "delivered";
+  if (status === "CANCELLED") return "cancelled";
   return "processing";
 }
 
@@ -85,6 +87,12 @@ async function getSnapshot(userId: string) {
         recipient: item.recipient ?? "Penerima",
         phone: item.phone ?? "-",
         line1: item.line1,
+        district: item.district ?? "",
+        city: item.city ?? "",
+        province: item.province ?? "",
+        postalCode: item.postalCode ?? "",
+        latitude: item.latitude ?? undefined,
+        longitude: item.longitude ?? undefined,
         isPrimary: item.isDefault,
       })) ?? [],
     paymentMethods:
@@ -92,6 +100,8 @@ async function getSnapshot(userId: string) {
         id: item.id,
         label: item.provider,
         details: item.accountMasked ?? item.type,
+        accountNumber: item.accountNumber ?? "",
+        accountName: item.accountName ?? "",
         isPrimary: item.isDefault,
       })) ?? [],
     orders:
@@ -174,6 +184,12 @@ export async function POST(req: NextRequest) {
         recipient: String(body.recipient ?? "Penerima"),
         phone: String(body.phone ?? "-"),
         line1: String(body.line1 ?? ""),
+        district: String(body.district ?? ""),
+        city: String(body.city ?? ""),
+        province: String(body.province ?? ""),
+        postalCode: String(body.postalCode ?? ""),
+        latitude: body.latitude ? Number(body.latitude) : null,
+        longitude: body.longitude ? Number(body.longitude) : null,
         isDefault: true,
       },
     });
@@ -190,6 +206,12 @@ export async function POST(req: NextRequest) {
         recipient: payload.recipient ? String(payload.recipient) : undefined,
         phone: payload.phone ? String(payload.phone) : undefined,
         line1: payload.line1 ? String(payload.line1) : undefined,
+        district: payload.district ? String(payload.district) : undefined,
+        city: payload.city ? String(payload.city) : undefined,
+        province: payload.province ? String(payload.province) : undefined,
+        postalCode: payload.postalCode ? String(payload.postalCode) : undefined,
+        latitude: payload.latitude ? Number(payload.latitude) : undefined,
+        longitude: payload.longitude ? Number(payload.longitude) : undefined,
         isDefault: isPrimary || undefined,
       },
     });
@@ -201,8 +223,10 @@ export async function POST(req: NextRequest) {
       data: {
         userId,
         type: "VIRTUAL_ACCOUNT",
-        provider: String(body.label ?? "Virtual Account"),
-        accountMasked: String(body.details ?? "Metode utama"),
+        provider: String(body.label ?? "Bank"),
+        accountNumber: String(body.accountNumber ?? ""),
+        accountName: String(body.accountName ?? ""),
+        accountMasked: String(body.accountNumber ?? "").slice(-4),
         isDefault: true,
       },
     });
@@ -242,43 +266,48 @@ export async function POST(req: NextRequest) {
       data: { readAt: new Date() },
     });
   } else if (action === "createOrder") {
-    const items = (body.items ?? []) as Record<string, unknown>[];
-    const subtotal = items.reduce(
-      (acc, item) => acc + Number(item.price ?? 0) * Number(item.quantity ?? 1),
-      0
-    );
-    const shipping = Number(body.shipping ?? 0);
-    const total = Number(body.total ?? subtotal + shipping);
-    await prisma.order.create({
-      data: {
-        userId,
-        status: "PROCESSING",
-        shippingFee: new Prisma.Decimal(shipping),
-        courier: String(body.courier ?? "JNE Regular"),
-        notes: body.notes ? String(body.notes) : null,
-        promoCode: body.promoCode ? String(body.promoCode) : null,
-        totalAmount: new Prisma.Decimal(total),
-        items: {
-          create: items.map((item) => ({
-            productId: String(item.productId ?? ""),
-            productName: String(item.name ?? ""),
-            size: item.size ? String(item.size) : null,
-            color: item.color ? String(item.color) : null,
-            imageUrl: item.imageUrl ? String(item.imageUrl) : null,
-            quantity: Number(item.quantity ?? 1),
-            price: new Prisma.Decimal(Number(item.price ?? 0)),
-          })),
+    try {
+      const items = (body.items ?? []) as Record<string, unknown>[];
+      const subtotal = items.reduce(
+        (acc, item) => acc + Number(item.price ?? 0) * Number(item.quantity ?? 1),
+        0
+      );
+      const shipping = Number(body.shipping ?? 0);
+      const total = Number(body.total ?? subtotal + shipping);
+      await prisma.order.create({
+        data: {
+          userId,
+          status: OrderStatus.AWAITING_PAYMENT,
+          shippingFee: new Prisma.Decimal(shipping),
+          courier: String(body.courier ?? "JNE Regular"),
+          notes: body.notes ? String(body.notes) : null,
+          promoCode: body.promoCode ? String(body.promoCode) : null,
+          totalAmount: new Prisma.Decimal(total),
+          items: {
+            create: items.map((item) => ({
+              productId: String(item.productId ?? ""),
+              productName: String(item.name ?? ""),
+              size: item.size ? String(item.size) : null,
+              color: item.color ? String(item.color) : null,
+              imageUrl: item.imageUrl ? String(item.imageUrl) : null,
+              quantity: Number(item.quantity ?? 1),
+              price: new Prisma.Decimal(Number(item.price ?? 0)),
+            })),
+          },
         },
-      },
-    });
-    await prisma.notification.create({
-      data: {
-        userId,
-        type: "ORDER",
-        title: "Pesanan berhasil dibuat",
-        message: "Pesanan Anda sedang diproses.",
-      },
-    });
+      });
+      await prisma.notification.create({
+        data: {
+          userId,
+          type: "ORDER",
+          title: "Pesanan Menunggu Pembayaran",
+          message: "Silakan selesaikan pembayaran Anda untuk memproses pesanan.",
+        },
+      });
+    } catch (err: any) {
+      console.error("CRITICAL ERROR in createOrder:", err);
+      return NextResponse.json({ error: "Gagal membuat pesanan di database.", details: err.message }, { status: 500 });
+    }
   }
 
   const data = await getSnapshot(userId);

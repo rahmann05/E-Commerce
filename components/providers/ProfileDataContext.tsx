@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/components/providers/AuthContext";
 import type { CartItem } from "@/components/providers/CartContext";
 
-export type ProfileOrderStatus = "processing" | "shipped" | "delivered";
+export type ProfileOrderStatus = "awaiting_payment" | "processing" | "shipped" | "delivered" | "cancelled";
 
 export interface ProfileAddress {
   id: string;
@@ -20,6 +20,12 @@ export interface ProfileAddress {
   recipient: string;
   phone: string;
   line1: string;
+  district: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  latitude?: number;
+  longitude?: number;
   isPrimary: boolean;
 }
 
@@ -27,6 +33,8 @@ export interface ProfilePaymentMethod {
   id: string;
   label: string;
   details: string;
+  accountNumber?: string;
+  accountName?: string;
   isPrimary: boolean;
 }
 
@@ -91,11 +99,11 @@ interface ProfileDataContextValue {
   vouchers: ProfileVoucher[];
   notifications: ProfileNotification[];
   saveProfileInfo: (payload: { name: string; phone: string }) => void;
-  addAddress: (payload: Omit<ProfileAddress, "id" | "isPrimary">) => void;
-  updateAddress: (id: string, payload: Partial<Omit<ProfileAddress, "id">>) => void;
-  removeAddress: (id: string) => void;
-  addPaymentMethod: (payload: Omit<ProfilePaymentMethod, "id" | "isPrimary">) => void;
-  removePaymentMethod: (id: string) => void;
+  addAddress: (payload: Omit<ProfileAddress, "id" | "isPrimary">) => Promise<{ success: boolean; address?: ProfileAddress; message?: string }>;
+  updateAddress: (id: string, payload: Partial<Omit<ProfileAddress, "id">>) => Promise<{ success: boolean; message?: string }>;
+  removeAddress: (id: string) => Promise<{ success: boolean; message?: string }>;
+  addPaymentMethod: (payload: { label: string; accountNumber: string; accountName: string }) => Promise<{ success: boolean; message?: string }>;
+  removePaymentMethod: (id: string) => Promise<{ success: boolean; message?: string }>;
   placeOrderFromCart: (payload: {
     items: CartItem[];
     shipping: number;
@@ -183,38 +191,47 @@ export function ProfileDataProvider({ children }: { children: ReactNode }) {
   );
 
   const addAddress = useCallback(
-    (payload: Omit<ProfileAddress, "id" | "isPrimary">) => {
+    async (payload: Omit<ProfileAddress, "id" | "isPrimary">) => {
       updateUser({ address: payload.line1 });
-      void callMutation("addAddress", payload);
+      const newData = await callMutation("addAddress", payload);
+      if (newData && newData.addresses.length > 0) {
+        // Return the newly created address (last one since it's added)
+        return { success: true, address: newData.addresses[newData.addresses.length - 1] };
+      }
+      return { success: false, message: "Gagal menyimpan alamat." };
     },
     [updateUser, callMutation]
   );
 
   const updateAddress = useCallback(
-    (id: string, payload: Partial<Omit<ProfileAddress, "id">>) => {
-      void callMutation("updateAddress", { id, payload });
+    async (id: string, payload: Partial<Omit<ProfileAddress, "id">>) => {
+      const res = await callMutation("updateAddress", { id, payload });
+      return { success: !!res };
     },
     [callMutation]
   );
 
   const removeAddress = useCallback(
-    (id: string) => {
-      void callMutation("removeAddress", { id });
+    async (id: string) => {
+      const res = await callMutation("removeAddress", { id });
+      return { success: !!res };
     },
     [callMutation]
   );
 
   const addPaymentMethod = useCallback(
-    (payload: Omit<ProfilePaymentMethod, "id" | "isPrimary">) => {
+    async (payload: { label: string; accountNumber: string; accountName: string }) => {
       updateUser({ paymentPreference: payload.label });
-      void callMutation("addPaymentMethod", payload);
+      const res = await callMutation("addPaymentMethod", payload);
+      return { success: !!res };
     },
     [updateUser, callMutation]
   );
 
   const removePaymentMethod = useCallback(
-    (id: string) => {
-      void callMutation("removePaymentMethod", { id });
+    async (id: string) => {
+      const res = await callMutation("removePaymentMethod", { id });
+      return { success: !!res };
     },
     [callMutation]
   );

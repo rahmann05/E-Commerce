@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NavbarAuthStatus from "@/components/auth/NavbarAuthStatus";
@@ -67,11 +67,16 @@ export default function Navbar() {
 
 function CartLink() {
   const { cartCount } = useCart();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   return (
     <Link href="/cart" style={{ display: "flex", alignItems: "center", gap: "0.4rem", textDecoration: "none", color: "inherit" }}>
       Cart
-      {cartCount > 0 && (
+      {isMounted && cartCount > 0 && (
         <span style={{ 
           background: "#111", 
           color: "#fff", 

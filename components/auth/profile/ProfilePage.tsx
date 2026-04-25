@@ -59,40 +59,48 @@ export default function ProfilePage() {
   } = useProfileData();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabId>(() => toTab(searchParams.get("tab")));
+  
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Sync tab with URL on mount
+  useEffect(() => {
+    setIsMounted(true);
+    const tab = toTab(searchParams.get("tab"));
+    if (tab !== "overview") {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   // If not loading and no user, redirect to login
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (isMounted && !isLoading && !user) {
       router.replace("/login");
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, isMounted]);
 
-  // While checking auth state, don't flash the UI
-  if (isLoading || !user) {
-    return null;
-  }
 
   const handleSaveProfile = (payload: { name: string; phone: string }) => {
     updateUser({ name: payload.name, phone: payload.phone });
   };
 
-  const handleSaveAddress = (payload: {
+  const handleSaveAddress = async (payload: {
     label: string;
     recipient: string;
     phone: string;
     line1: string;
+    district: string;
+    city: string;
+    province: string;
+    postalCode: string;
   }) => {
-    addAddress(payload);
-    updateUser({ address: payload.line1 });
+    await addAddress(payload);
+    updateUser({ address: `${payload.line1}, ${payload.city}` });
   };
 
-  const handleSavePayment = (paymentPreference: string) => {
-    addPaymentMethod({
-      label: paymentPreference,
-      details: "Metode pembayaran utama",
-    });
-    updateUser({ paymentPreference });
+  const handleSavePayment = async (payload: { label: string; accountNumber: string; accountName: string }) => {
+    await addPaymentMethod(payload);
+    updateUser({ paymentPreference: payload.label });
   };
 
   const handleSavePassword = (payload: {
@@ -147,6 +155,15 @@ export default function ProfilePage() {
       default: return null;
     }
   };
+
+  // While checking auth state or before mounting, don't flash the UI
+  if (!isMounted || isLoading || !user) {
+    return (
+      <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="animate-spin" style={{ width: "40px", height: "40px", border: "3px solid #eee", borderTopColor: "#111", borderRadius: "50%" }}></div>
+      </div>
+    );
+  }
 
   return (
     <main className="profile-page">
