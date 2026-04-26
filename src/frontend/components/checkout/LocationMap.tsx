@@ -6,8 +6,7 @@ import "leaflet/dist/leaflet.css";
 
 // Fix Leaflet icon issue
 const fixLeafletIcon = () => {
-  // @ts-ignore
-  delete L.Icon.Default.prototype._getIconUrl;
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
     iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -28,12 +27,12 @@ export default function LocationMap({ onLocationSelect, centerLat, centerLng }: 
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
     fixLeafletIcon();
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isMounted || !mapContainerRef.current || mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current) return;
 
     const initialLat = centerLat || -6.200000;
     const initialLng = centerLng || 106.816666;
@@ -97,9 +96,8 @@ export default function LocationMap({ onLocationSelect, centerLat, centerLng }: 
       // Only pan if it's not too far to avoid jumping
       mapRef.current.panTo(latlng);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerLat, centerLng]);
-
-  if (!isMounted) return null;
 
   return (
     <div style={{ position: "relative" }}>

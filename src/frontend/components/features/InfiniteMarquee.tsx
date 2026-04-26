@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getCarouselImages } from "@/frontend/lib/actions/catalogue";
+import Image from "next/image";
 
 interface InfiniteMarqueeProps {
   /** Animation duration in seconds */

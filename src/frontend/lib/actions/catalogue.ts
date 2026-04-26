@@ -205,6 +205,6 @@ export async function getCarouselImages(): Promise<string[]> {
     return products.flatMap(p => p.images).filter((img): img is string => !!img);
   } catch (err) {
     console.error("[DB] getCarouselImages failed:", err);
-    return CATALOGUE_PRODUCTS_FALLBACK.map(p => p.image);
+    return CATALOGUE_PRODUCTS_FALLBACK.map(p => p.image).filter((img): img is string => img !== undefined);
   }
 }

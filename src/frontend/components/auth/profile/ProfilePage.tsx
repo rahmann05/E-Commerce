@@ -173,28 +173,28 @@ export default function ProfilePage() {
         {/* Sidebar Navigation */}
         <aside className="profile-sidebar">
           
-          <div className="profile-section-title" style={{ marginBottom: "0.8rem" }}>Akun</div>
-          <nav className="profile-sidebar-nav" style={{ marginBottom: "2rem" }}>
+          <div className="profile-section-title mb-3">Akun</div>
+          <nav className="profile-sidebar-nav mb-8">
             <button className={`profile-tab ${activeTab === "overview" ? "active" : ""}`} onClick={() => setActiveTab("overview")}>Profil Saya</button>
             <button className={`profile-tab ${activeTab === "address" ? "active" : ""}`} onClick={() => setActiveTab("address")}>Alamat Pengiriman</button>
             <button className={`profile-tab ${activeTab === "payment" ? "active" : ""}`} onClick={() => setActiveTab("payment")}>Metode Pembayaran</button>
             <button className={`profile-tab ${activeTab === "security" ? "active" : ""}`} onClick={() => setActiveTab("security")}>Keamanan</button>
           </nav>
 
-          <div className="profile-section-title" style={{ marginBottom: "0.8rem" }}>Aktivitas</div>
-          <nav className="profile-sidebar-nav" style={{ marginBottom: "2rem" }}>
+          <div className="profile-section-title mb-3">Aktivitas</div>
+          <nav className="profile-sidebar-nav mb-8">
             <button className={`profile-tab ${activeTab === "orders" ? "active" : ""}`} onClick={() => setActiveTab("orders")}>Pesanan Saya</button>
             <button className={`profile-tab ${activeTab === "wishlist" ? "active" : ""}`} onClick={() => setActiveTab("wishlist")}>Daftar Keinginan</button>
             <button className={`profile-tab ${activeTab === "reviews" ? "active" : ""}`} onClick={() => setActiveTab("reviews")}>Ulasan Saya</button>
           </nav>
 
-          <div className="profile-section-title" style={{ marginBottom: "0.8rem" }}>Promo & Info</div>
+          <div className="profile-section-title mb-3">Promo & Info</div>
           <nav className="profile-sidebar-nav">
             <button className={`profile-tab ${activeTab === "vouchers" ? "active" : ""}`} onClick={() => setActiveTab("vouchers")}>Voucher Saya</button>
             <button className={`profile-tab ${activeTab === "notifications" ? "active" : ""}`} onClick={() => setActiveTab("notifications")}>Notifikasi</button>
           </nav>
 
-          <div style={{ marginTop: "3rem" }}>
+          <div className="mt-12">
             <ProfileLogoutButton />
           </div>
         </aside>

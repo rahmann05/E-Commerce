@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import SectionLabel from "../../ui/SectionLabel";
 import RevealText from "../../ui/RevealText";
+import Image from "next/image";
 
 interface AboutStoryProps {
   studioModel1: string;
@@ -27,7 +28,7 @@ export default function AboutStory({ studioModel1 }: AboutStoryProps) {
               background: "#fff"
             }}
           >
-            <img src={studioModel1} alt="Studio Fashion" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <Image src={studioModel1} alt="Studio Fashion" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
           </motion.div>
           
           <motion.div

@@ -13,11 +13,15 @@ export const metadata: Metadata = {
   description: "Kelola akun dan lihat riwayat pesanan Novure Anda.",
 };
 
+import { Suspense } from "react";
+
 export default function ProfileRoute() {
   return (
     <>
       <Navbar />
-      <ProfilePage />
+      <Suspense fallback={<div>Loading profile...</div>}>
+        <ProfilePage />
+      </Suspense>
       <Footer />
     </>
   );

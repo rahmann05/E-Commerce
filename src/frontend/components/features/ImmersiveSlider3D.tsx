@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 interface SliderItem {
   id: string | number;
@@ -20,14 +21,14 @@ export default function ImmersiveSlider3D({ items }: ImmersiveSlider3DProps) {
   const [index, setIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  const next = () => setIndex((prev) => (prev + 1) % items.length);
+  const next = useCallback(() => setIndex((prev) => (prev + 1) % items.length), [items.length]);
   const prev = () => setIndex((prev) => (prev - 1 + items.length) % items.length);
 
   useEffect(() => {
     if (isHovered) return;
     const timer = setInterval(next, 7000);
     return () => clearInterval(timer);
-  }, [isHovered, items.length]);
+  }, [isHovered, next]);
 
   return (
     <div 
@@ -122,7 +123,7 @@ export default function ImmersiveSlider3D({ items }: ImmersiveSlider3DProps) {
                     borderRadius: "0.75rem", 
                     overflow: "hidden"
                   }}>
-                    <img src={item.avatar} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <Image src={item.avatar} alt={item.name} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 300px" />
                   </div>
                 </div>
 
