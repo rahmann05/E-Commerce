@@ -42,61 +42,55 @@ async function main() {
   console.log('Categories created.')
 
   // Create Products from DISCOVER_PRODUCTS
-  for (const p of DISCOVER_PRODUCTS) {
-    await prisma.product.create({
-      data: {
-        name: p.name,
-        slug: slugify(`${p.name}-${p.id}`),
-        description: `High-quality ${p.name} with premium fabric. Size: ${p.sizes}`,
-        price: p.price,
-        rating: p.rating,
-        sizes: p.sizes,
-        colors: ["#111111"],
-        stock: 50,
-        inStock: true,
-        images: [p.image],
-        categoryId: categoryTees.id, // Defaulting to Tees for now
-      },
-    })
-  }
+  await prisma.product.createMany({
+    data: DISCOVER_PRODUCTS.map((p) => ({
+      name: p.name,
+      slug: slugify(`${p.name}-${p.id}`),
+      description: `High-quality ${p.name} with premium fabric. Size: ${p.sizes}`,
+      price: p.price,
+      rating: p.rating,
+      sizes: p.sizes,
+      colors: ["#111111"],
+      stock: 50,
+      inStock: true,
+      images: [p.image],
+      categoryId: categoryTees.id, // Defaulting to Tees for now
+    })),
+  })
 
   // Add more from TEES
-  for (const t of TEES) {
-    await prisma.product.create({
-      data: {
-        name: t.name,
-        slug: slugify(`${t.name}-${t.image}`),
-        description: `Premium ${t.name} in custom color ${t.color}`,
-        price: 250,
-        rating: 5,
-        sizes: "S - XXL",
-        colors: [t.color],
-        stock: 100,
-        inStock: true,
-        images: [t.image],
-        categoryId: categoryTees.id,
-      },
-    })
-  }
+  await prisma.product.createMany({
+    data: TEES.map((t) => ({
+      name: t.name,
+      slug: slugify(`${t.name}-${t.image}`),
+      description: `Premium ${t.name} in custom color ${t.color}`,
+      price: 250,
+      rating: 5,
+      sizes: "S - XXL",
+      colors: [t.color],
+      stock: 100,
+      inStock: true,
+      images: [t.image],
+      categoryId: categoryTees.id,
+    })),
+  })
 
   // Add more from JEANS
-  for (const j of JEANS) {
-    await prisma.product.create({
-      data: {
-        name: j.name,
-        slug: slugify(`${j.name}-${j.image}`),
-        description: `Durable ${j.name} with modern fit.`,
-        price: 450,
-        rating: 5,
-        sizes: "W28 - W36",
-        colors: [j.color],
-        stock: 40,
-        inStock: true,
-        images: [j.image],
-        categoryId: categoryJeans.id,
-      },
-    })
-  }
+  await prisma.product.createMany({
+    data: JEANS.map((j) => ({
+      name: j.name,
+      slug: slugify(`${j.name}-${j.image}`),
+      description: `Durable ${j.name} with modern fit.`,
+      price: 450,
+      rating: 5,
+      sizes: "W28 - W36",
+      colors: [j.color],
+      stock: 40,
+      inStock: true,
+      images: [j.image],
+      categoryId: categoryJeans.id,
+    })),
+  })
 
   console.log('Products created.')
   console.log('Seeding finished.')
