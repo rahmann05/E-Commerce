@@ -9,6 +9,8 @@ const pool = new pg.Pool({
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+const LETTER_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
 const PRODUCTS_TO_SEED = [
   {
     name: "Boxy Sage Green Tee",
@@ -142,6 +144,34 @@ const PRODUCTS_TO_SEED = [
   },
 ];
 
+function expandSizeRange(range: string): string[] {
+  const parts = range.split(" - ").map((s) => s.trim());
+  if (parts.length < 2) return [range.trim()];
+  const [start, end] = parts;
+
+  if (start.startsWith("W") && end.startsWith("W")) {
+    const s = parseInt(start.slice(1), 10);
+    const e = parseInt(end.slice(1), 10);
+    if (!Number.isNaN(s) && !Number.isNaN(e) && e >= s) {
+      const result: string[] = [];
+      for (let i = s; i <= e; i += 2) result.push(`W${i}`);
+      return result;
+    }
+  }
+
+  const si = LETTER_SIZES.indexOf(start);
+  const ei = LETTER_SIZES.indexOf(end);
+  if (si !== -1 && ei !== -1 && ei >= si) return LETTER_SIZES.slice(si, ei + 1);
+
+  return [start, end].filter(Boolean);
+}
+
+function parseSizes(sizes: string): string[] {
+  if (sizes.includes(",")) return sizes.split(",").map((s) => s.trim()).filter(Boolean);
+  if (sizes.includes(" - ")) return expandSizeRange(sizes);
+  return [sizes.trim()].filter(Boolean);
+}
+
 async function main() {
   console.log("🚀 Start seeding with ALL products...");
 
@@ -195,8 +225,33 @@ async function main() {
   console.log("👕 Creating products and variants...");
   for (const p of PRODUCTS_TO_SEED) {
     const slug = p.name.toLowerCase().replace(/ /g, "-");
-    const sizesArr = p.sizes.split(" - ");
-    const finalSizes = sizesArr.length > 1 ? ["S", "M", "L", "XL", "XXL"] : [p.sizes];
+    const finalSizes = parseSizes(p.sizes);
+    const sizeStocks = finalSizes.map((_, idx) => Math.max(8, 40 - idx * 6));
+
+    if (finalSizes.length === 0) {
+      throw new Error(`Invalid seed product ${p.name}: ukuran tidak boleh kosong.`);
+    }
+
+    if (finalSizes.length !== sizeStocks.length) {
+      throw new Error(
+        `Invalid seed product ${p.name}: sizeOptions (${finalSizes.length}) != sizeStocks (${sizeStocks.length}).`
+      );
+    }
+
+    if (sizeStocks.some((n) => n < 0)) {
+      throw new Error(`Invalid seed product ${p.name}: sizeStocks tidak boleh negatif.`);
+    }
+
+    const sizeStockMap = new Map(finalSizes.map((size, idx) => [size, sizeStocks[idx]]));
+    const variantColors = p.colors.length > 0 ? p.colors : [null];
+    const variantRows = variantColors.flatMap((color) =>
+      finalSizes.map((size) => ({
+        size,
+        color,
+        stock: sizeStockMap.get(size) ?? 20,
+      }))
+    );
+    const totalStock = sizeStocks.reduce((sum, n) => sum + n, 0);
 
     await prisma.product.create({
       data: {
@@ -209,11 +264,12 @@ async function main() {
         images: [p.image],
         colors: p.colors,
         sizes: p.sizes,
+        sizeOptions: finalSizes,
+        sizeStocks,
+        stock: totalStock,
+        inStock: totalStock > 0,
         variants: {
-          create: finalSizes.map(size => ({
-            size,
-            stock: 50
-          }))
+          create: variantRows,
         }
       }
     });

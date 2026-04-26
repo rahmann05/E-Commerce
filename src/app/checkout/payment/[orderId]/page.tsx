@@ -95,37 +95,13 @@ export default function PaymentStatusPage() {
       const methodKey = new URLSearchParams(window.location.search).get("method") || "bca_va";
       const methodObj = PAYMENT_METHODS[methodKey];
 
-      const itemsSum = localOrder.items.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
-      const diff = localOrder.total - (itemsSum + localOrder.shipping);
-
       const res = await fetch("/api/checkout/midtrans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           order_id: orderId,
-          gross_amount: localOrder.total,
           payment_type: methodObj?.midtransId,
           bank: methodObj?.bank,
-          items: [
-            ...localOrder.items.map(item => ({
-              id: item.productId,
-              name: item.name,
-              price: item.unitPrice,
-              quantity: item.quantity
-            })),
-            ...(localOrder.shipping > 0 ? [{
-              id: "shipping",
-              name: "Ongkos Kirim",
-              price: localOrder.shipping,
-              quantity: 1
-            }] : []),
-            ...(diff !== 0 ? [{
-              id: "adjustment",
-              name: diff < 0 ? "Potongan Harga / Voucher" : "Biaya Tambahan",
-              price: diff,
-              quantity: 1
-            }] : [])
-          ],
           customer_details: {
             first_name: user?.name,
             email: user?.email,

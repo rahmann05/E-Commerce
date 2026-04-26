@@ -13,6 +13,8 @@ export interface Product {
   price: number;
   imageUrl?: string;
   category?: string;
+  sizeOptions?: string[];
+  sizeStocks?: number[];
   variants?: ProductVariant[];
 }
 

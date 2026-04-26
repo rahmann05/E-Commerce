@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { useColorTheme } from "@/context/ColorContext";
@@ -11,7 +11,6 @@ import { getTees, getJeans } from "@/frontend/lib/actions/catalogue";
 export default function EssentializedSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
-  const titleInView = useInView(titleRef, { once: true, margin: "-50px" });
   const { setCustomTheme } = useColorTheme();
 
   const [tees, setTees] = useState<any[]>([]);
@@ -110,7 +109,7 @@ export default function EssentializedSection() {
       </motion.div>
 
       <div style={{ position: "relative", width: "100%", paddingBottom: "5vw" }}>
-        <motion.div ref={titleRef} style={{ y: yTitle, position: "absolute", top: "2vw", left: 0, right: 0, zIndex: 1 }}>
+        <motion.div ref={titleRef} style={{ y: yTitle, position: "absolute", top: "2vw", left: 0, right: 0, zIndex: 6 }}>
           <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}>
             <h2
               className="essentialized-title"
@@ -128,7 +127,7 @@ export default function EssentializedSection() {
                 <motion.span
                   key={i}
                   initial={{ y: 200, opacity: 0 }}
-                  animate={titleInView ? { y: 0, opacity: 1 } : { y: 200, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
                   transition={{ duration: 1, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
                   style={{ display: "inline-block" }}
                 >
@@ -165,7 +164,7 @@ export default function EssentializedSection() {
                   <motion.span
                     key={`inner-${i}`}
                     initial={{ y: 200, opacity: 0 }}
-                    animate={titleInView ? { y: 0, opacity: 1 } : { y: 200, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 1, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
                     style={{ display: "inline-block" }}
                   >

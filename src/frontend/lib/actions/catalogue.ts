@@ -14,6 +14,8 @@ import { CATALOGUE_PRODUCTS_FALLBACK } from "@/components/data/products";
 
 export type CategoryFilter = "all" | "tees" | "jeans" | "accessories" | "outerwear";
 
+const LETTER_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function rowToProduct(
@@ -24,10 +26,19 @@ function rowToProduct(
     price: unknown;
     rating: number;
     sizes: string | null;
+    sizeOptions: string[];
+    sizeStocks: number[];
     images: string[];
     colors: string[];
     inStock: boolean;
     category: { name: string };
+    stock: number;
+    variants: Array<{
+      id: string;
+      size: string;
+      color: string | null;
+      stock: number;
+    }>;
   },
   index: number
 ): CatalogueProduct {
@@ -42,11 +53,86 @@ function rowToProduct(
     category,
     price: Number(row.price),
     rating: row.rating ?? 5,
-    sizes: row.sizes ?? "S - XXL",
+    sizes:
+      row.sizes ??
+      (row.sizeOptions.length > 0
+        ? row.sizeOptions.length > 1
+          ? `${row.sizeOptions[0]} - ${row.sizeOptions[row.sizeOptions.length - 1]}`
+          : row.sizeOptions[0]
+        : "S - XXL"),
     image: row.images?.[0] ?? "/images/model1.jpg",
     colors: row.colors ?? [],
-    inStock: row.inStock,
+    sizeOptions: row.sizeOptions ?? [],
+    sizeStocks: row.sizeStocks ?? [],
+    inStock: row.inStock && (row.variants.length === 0 || row.variants.some((v) => v.stock > 0)),
+    variants: row.variants.map((v) => ({
+      id: v.id,
+      productId: row.id,
+      size: v.size,
+      color: v.color ?? undefined,
+      stock: v.stock,
+    })),
   };
+}
+
+function expandSizeRange(range: string): string[] {
+  const parts = range.split(" - ").map((s) => s.trim());
+  if (parts.length < 2) return [range.trim()];
+  const [start, end] = parts;
+
+  if (start.startsWith("W") && end.startsWith("W")) {
+    const s = parseInt(start.slice(1), 10);
+    const e = parseInt(end.slice(1), 10);
+    if (!Number.isNaN(s) && !Number.isNaN(e) && e >= s) {
+      const result: string[] = [];
+      for (let i = s; i <= e; i += 2) result.push(`W${i}`);
+      return result;
+    }
+  }
+
+  const si = LETTER_SIZES.indexOf(start);
+  const ei = LETTER_SIZES.indexOf(end);
+  if (si !== -1 && ei !== -1 && ei >= si) return LETTER_SIZES.slice(si, ei + 1);
+
+  return [start, end].filter(Boolean);
+}
+
+function parseSizes(sizes: string | null): string[] {
+  if (!sizes) return [];
+  if (sizes.includes(",")) return sizes.split(",").map((s) => s.trim()).filter(Boolean);
+  if (sizes.includes(" - ")) return expandSizeRange(sizes);
+  return [sizes.trim()].filter(Boolean);
+}
+
+function assertCorrelatedSizeStock(row: {
+  id: string;
+  sizes: string | null;
+  sizeOptions: string[];
+  sizeStocks: number[];
+  stock: number;
+}) {
+  if (row.sizeOptions.length === 0 && row.sizes) {
+    const parsed = parseSizes(row.sizes);
+    if (parsed.length > 0) {
+      throw new Error(
+        `Product ${row.id} invalid: sizeOptions kosong padahal sizes terisi (${row.sizes}).`
+      );
+    }
+  }
+
+  if (row.sizeOptions.length !== row.sizeStocks.length) {
+    throw new Error(
+      `Product ${row.id} invalid: sizeOptions (${row.sizeOptions.length}) tidak sama dengan sizeStocks (${row.sizeStocks.length}).`
+    );
+  }
+
+  if (row.sizeStocks.some((n) => n < 0)) {
+    throw new Error(`Product ${row.id} invalid: sizeStocks tidak boleh negatif.`);
+  }
+
+  if (row.stock < 0) {
+    throw new Error(`Product ${row.id} invalid: stock tidak boleh negatif.`);
+  }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -64,9 +150,12 @@ export async function getProducts(
         inStock: true,
         ...(category === "all" ? {} : { category: { name: { equals: category, mode: "insensitive" } } }),
       },
-      include: { category: true },
+      include: { category: true, variants: true },
       orderBy: { createdAt: "desc" },
     });
+
+    rows.forEach(assertCorrelatedSizeStock);
+
     return rows.map(rowToProduct);
   } catch (err) {
     console.error("[DB] getProducts failed — using static fallback:", err);
@@ -84,10 +173,13 @@ export async function getProductById(
 ): Promise<CatalogueProduct | null> {
   try {
     const all = await prisma.product.findMany({
-      where: { inStock: true },
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
+      where: { inStock: true, id },
+      include: { category: true, variants: true },
+      take: 1,
     });
+
+    all.forEach(assertCorrelatedSizeStock);
+
     const mapped = all.map((row, idx) => rowToProduct(row, idx));
     return mapped.find((item: CatalogueProduct) => item.id === id) ?? null;
   } catch (err) {

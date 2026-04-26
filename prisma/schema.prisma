@@ -55,6 +55,8 @@ model Product {
   price       Decimal  @db.Decimal(10, 2)
   rating      Int      @default(5)
   sizes       String?
+  sizeOptions String[] @default([])
+  sizeStocks  Int[]    @default([])
   colors      String[]
   stock       Int      @default(0)
   inStock     Boolean  @default(true)

@@ -52,9 +52,55 @@ export default function ProductDetailModal({ product, onClose }: Props) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const [wishlistMessage, setWishlistMessage] = useState<string | null>(null);
 
-  function handleAdd() {
+  const variants = product?.variants ?? [];
+  const hasVariantColors = variants.some((v) => !!v.color);
+
+  const sizeOptions =
+    variants.length > 0
+      ? Array.from(new Set(variants.map((v) => v.size)))
+      : product?.sizes
+        ? product.sizes.includes(" - ")
+          ? expandSizeRange(product.sizes)
+          : product.sizes.split(",").map((s) => s.trim())
+        : [];
+
+  const colorOptions =
+    hasVariantColors
+      ? Array.from(new Set(variants.map((v) => v.color).filter((c): c is string => !!c)))
+      : (((product?.colors || []) || []) || []);
+
+  const stockBySize: Record<string, number> = sizeOptions.reduce((acc, size) => {
+    if (variants.length === 0) {
+      acc[size] = 0;
+      return acc;
+    }
+    acc[size] = variants
+      .filter((v) => v.size === size)
+      .reduce((sum, v) => sum + v.stock, 0);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const selectedVariant =
+    variants.length === 0
+      ? null
+      : variants.find((v) => {
+          const sizeMatch = selectedSize ? v.size === selectedSize : true;
+          const colorMatch = hasVariantColors && selectedColor ? v.color === selectedColor : true;
+          return sizeMatch && colorMatch && v.stock > 0;
+        }) ??
+        variants.find((v) => {
+          const sizeMatch = selectedSize ? v.size === selectedSize : true;
+          return sizeMatch && v.stock > 0;
+        }) ??
+        variants.find((v) => v.stock > 0) ??
+        null;
+
+  const selectedVariantStock = selectedVariant?.stock ?? 0;
+
+  async function handleAdd() {
     if (!user) {
       // Not logged in — send to login, return here afterwards
       onClose();
@@ -64,24 +110,21 @@ export default function ProductDetailModal({ product, onClose }: Props) {
 
     if (!product) return;
 
-    // Default to first size/color if none selected for demo purposes
-    const size = selectedSize || (product.sizes ? expandSizeRange(product.sizes)[0] : "OS");
-    const color = selectedColor || ((((product.colors || []) || []) || []).length > 0 ? (((product.colors || []) || []) || [])[0] : "Default");
+    if (!selectedVariant) {
+      setAddError("Stok varian tidak tersedia. Pilih ukuran/warna lain.");
+      return;
+    }
 
-
-    addToCart(product, "dummy-variant", 1);
-
-
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    try {
+      setAddError(null);
+      await addToCart(product, selectedVariant.id, 1);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (err: any) {
+      setAddError(err?.message ?? "Gagal menambahkan produk ke cart.");
+    }
   }
 
-  // Compute sizes from product — safe because product is checked in JSX before use
-  const sizes = product?.sizes
-    ? product.sizes.includes(" - ")
-      ? expandSizeRange(product.sizes)
-      : product.sizes.split(",").map((s) => s.trim())
-    : [];
   const wished = product ? isWishlisted(product.id) : false;
 
   return (
@@ -196,32 +239,37 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                 <p className="modal-product-desc">{product.description}</p>
 
                 {/* Size selector */}
-                {sizes.length > 0 && (
+                {sizeOptions.length > 0 && (
                   <>
                     <div className="modal-size-label">Select Size</div>
                     <div className="modal-sizes-row">
-                      {sizes.map((size) => (
+                      {sizeOptions.map((size) => {
+                        const isOutOfStock = (stockBySize[size] ?? 0) <= 0;
+                        return (
                         <motion.button
                           type="button"
                           key={size}
                           className={`modal-size-btn${selectedSize === size ? " selected" : ""}`}
                           onClick={() => setSelectedSize(size)}
+                          disabled={isOutOfStock}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          style={isOutOfStock ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
                         >
-                          {size}
+                          {size} ({stockBySize[size] ?? 0})
                         </motion.button>
-                      ))}
+                      );
+                      })}
                     </div>
                   </>
                 )}
 
                 {/* Color selector */}
-                {(((product.colors || []) || []) || []).length > 0 && (
+                {colorOptions.length > 0 && (
                   <>
                     <div className="modal-colors-label">Color</div>
                     <div className="modal-colors-row">
-                      {(((product.colors || []) || []) || []).map((color) => (
+                      {colorOptions.map((color) => (
                         <button
                           type="button"
                           key={color}
@@ -233,6 +281,12 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                       ))}
                     </div>
                   </>
+                )}
+
+                {variants.length > 0 && (
+                  <div style={{ marginBottom: "1rem", fontSize: "0.82rem", color: "#666" }}>
+                    Stock tersedia: <strong style={{ color: "#111" }}>{selectedVariantStock}</strong>
+                  </div>
                 )}
 
                 {/* Add to Cart */}
@@ -289,6 +343,12 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                 {wishlistMessage && (
                   <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#777" }}>
                     {wishlistMessage}
+                  </div>
+                )}
+
+                {addError && (
+                  <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#b91c1c" }}>
+                    {addError}
                   </div>
                 )}
 

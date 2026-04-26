@@ -53,6 +53,32 @@ export class CartRepository {
     });
   }
 
+  async getVariantById(variantId: string) {
+    return await prisma.productVariant.findUnique({
+      where: { id: variantId },
+    });
+  }
+
+  async getCartItemByVariant(cartId: string, variantId: string) {
+    return await prisma.cartItem.findUnique({
+      where: {
+        cartId_productVariantId: {
+          cartId,
+          productVariantId: variantId,
+        },
+      },
+    });
+  }
+
+  async getCartItemWithVariant(itemId: string) {
+    return await prisma.cartItem.findUnique({
+      where: { id: itemId },
+      include: {
+        variant: true,
+      },
+    });
+  }
+
   async removeItemFromCart(itemId: string) {
     return await prisma.cartItem.delete({
       where: { id: itemId },

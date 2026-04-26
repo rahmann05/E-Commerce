@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/backend/prisma/client';
 
+function normalizePrice(price: unknown): number {
+  const n = Number(price ?? 0);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n < 10000 ? n * 1000 : n;
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get('userId');
@@ -66,7 +72,7 @@ export async function GET(req: Request) {
       paymentMethods: user.paymentMethods.map((pm: any) => ({
         id: pm.id,
         label: pm.label,
-        details: pm.details,
+        details: pm.accountNumber || pm.accountName || pm.label,
         accountNumber: pm.accountNumber || "",
         accountName: pm.accountName || "",
         isPrimary: pm.isPrimary
@@ -75,8 +81,8 @@ export async function GET(req: Request) {
         id: o.id,
         createdAt: o.createdAt.toISOString(),
         status: o.status.toLowerCase(),
-        total: Number(o.total),
-        shipping: Number(o.shipping),
+        total: Number(o.totalAmount),
+        shipping: Number(o.shippingFee),
         items: o.items.map((item: any) => ({
           productId: item.productId,
           name: item.name,
@@ -90,9 +96,12 @@ export async function GET(req: Request) {
           id: o.address.id,
           label: o.address.label,
           recipient: o.address.recipient,
+          phone: o.address.phone || "",
           line1: o.address.line1,
+          district: o.address.district || "",
           city: o.address.city,
           province: o.address.province,
+          postalCode: o.address.postalCode || "",
           isPrimary: o.address.isPrimary
         } : undefined
       })),
@@ -214,26 +223,149 @@ export async function POST(req: Request) {
         break;
 
       case "createOrder":
-        // This is complex, but for now we mock it or implement simply
-        await prisma.order.create({
-          data: {
-            userId,
-            status: "PROCESSING",
-            totalAmount: payload.total,
-            shippingFee: payload.shipping,
-            addressId: payload.addressId,
-            items: {
-              create: payload.items.map((item: any) => ({
-                productId: item.productId,
-                name: item.name || "Unknown Product",
-                quantity: item.quantity,
-                price: item.price,
-                size: item.size,
-                color: item.color,
-                imageUrl: item.image || ""
-              }))
-            }
+        await prisma.$transaction(async (tx) => {
+          const items = Array.isArray(payload.items) ? payload.items : [];
+          if (items.length === 0) {
+            throw new Error("Item checkout kosong.");
           }
+
+          const totalAmount = normalizePrice(payload.total);
+          const shippingFee = normalizePrice(payload.shipping);
+
+          if (totalAmount <= 0) {
+            throw new Error("Total checkout tidak valid.");
+          }
+
+          const variantUpdates: Array<{
+            variantId: string;
+            productId: string;
+            size: string;
+            quantity: number;
+          }> = [];
+
+          const orderItems = [] as Array<{
+            productId: string;
+            name: string;
+            quantity: number;
+            price: number;
+            size: string;
+            color: string;
+            imageUrl: string;
+          }>;
+
+          for (const rawItem of items) {
+            const item = rawItem as any;
+            const productId = String(item.productId || item.product?.id || "");
+            const variantId = String(item.productVariantId || item.variant?.id || "");
+            const quantity = Number(item.quantity || 0);
+
+            if (!productId || !variantId || quantity <= 0) {
+              throw new Error("Data item checkout tidak valid.");
+            }
+
+            const variant = await tx.productVariant.findUnique({
+              where: { id: variantId },
+              include: { product: true },
+            });
+
+            if (!variant || variant.productId !== productId) {
+              throw new Error("Variant produk tidak ditemukan atau tidak cocok.");
+            }
+
+            if (variant.stock < quantity) {
+              throw new Error(`Stok ${variant.size} tidak cukup. Sisa: ${variant.stock}.`);
+            }
+
+            const unitPrice = normalizePrice(item.product?.price ?? item.price ?? variant.product.price);
+            if (unitPrice <= 0) {
+              throw new Error(`Harga item ${variant.product.name} tidak valid.`);
+            }
+
+            orderItems.push({
+              productId,
+              name: item.product?.name || item.name || variant.product.name,
+              quantity,
+              price: unitPrice,
+              size: item.variant?.size || item.size || variant.size,
+              color: item.variant?.color || item.color || variant.color || "",
+              imageUrl: item.product?.imageUrl || item.imageUrl || item.image || variant.product.images?.[0] || "",
+            });
+
+            variantUpdates.push({
+              variantId,
+              productId,
+              size: variant.size,
+              quantity,
+            });
+          }
+
+          const createdOrder = await tx.order.create({
+            data: {
+              userId,
+              status: "AWAITING_PAYMENT",
+              totalAmount,
+              shippingFee,
+              addressId: payload.addressId,
+              courier: payload.courier || "JNE Regular",
+              notes: payload.notes || null,
+              promoCode: payload.promoCode || null,
+              items: {
+                create: orderItems,
+              },
+            },
+          });
+
+          const groupedByProduct = new Map<string, Array<{ size: string; quantity: number }>>();
+          for (const upd of variantUpdates) {
+            const current = groupedByProduct.get(upd.productId) || [];
+            current.push({ size: upd.size, quantity: upd.quantity });
+            groupedByProduct.set(upd.productId, current);
+          }
+
+          for (const upd of variantUpdates) {
+            await tx.productVariant.update({
+              where: { id: upd.variantId },
+              data: {
+                stock: {
+                  decrement: upd.quantity,
+                },
+              },
+            });
+          }
+
+          for (const [productId, sizeRows] of groupedByProduct.entries()) {
+            const product = await tx.product.findUnique({ where: { id: productId } });
+            if (!product) continue;
+
+            const productRecord = product as any;
+            const sizeOptions = Array.isArray(productRecord.sizeOptions) ? productRecord.sizeOptions : [];
+            const currentSizeStocks = Array.isArray(productRecord.sizeStocks) ? productRecord.sizeStocks : [];
+
+            const nextSizeStocks = [...currentSizeStocks];
+            for (const row of sizeRows) {
+              const idx = sizeOptions.findIndex((s: string) => s === row.size);
+              if (idx >= 0) {
+                nextSizeStocks[idx] = Math.max(0, (nextSizeStocks[idx] ?? 0) - row.quantity);
+              }
+            }
+
+            const nextTotalStock = Math.max(0, nextSizeStocks.reduce((sum, n) => sum + (n || 0), 0));
+            await tx.product.update({
+              where: { id: productId },
+              data: {
+                sizeStocks: nextSizeStocks,
+                stock: nextTotalStock,
+                inStock: nextTotalStock > 0,
+              },
+            });
+          }
+
+          const cart = await tx.cart.findUnique({ where: { userId } });
+          if (cart) {
+            await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+          }
+
+          return createdOrder;
         });
         break;
 
@@ -243,9 +375,10 @@ export async function POST(req: Request) {
 
     // After any mutation, return the full updated data
     const updatedRes = await fetch(`${new URL(req.url).origin}/api/account?userId=${userId}`);
-    return updatedRes;
+    const updatedPayload = await updatedRes.json();
+    return NextResponse.json(updatedPayload, { status: updatedRes.status });
   } catch (err: any) {
     console.error("[API] POST /account failed:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 });
   }
 }

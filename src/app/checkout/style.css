@@ -176,7 +176,14 @@
   color: #444;
 }
 
-.checkout-col-right {.checkout-input-group {
+.checkout-col-right {
+  text-align: right;
+  font-size: 0.95rem;
+  color: #111;
+  font-weight: 600;
+}
+
+.checkout-input-group {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -189,10 +196,15 @@
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
-  text-align: right;
-  font-size: 0.95rem;
-  color: #111;
-  font-weight: 600;
+
+.checkout-input-group-spaced {
+  margin-top: 0.8rem;
+}
+
+.checkout-error-text {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin-top: 0.9rem;
 }
 
 .checkout-options {

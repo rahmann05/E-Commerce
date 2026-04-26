@@ -1,10 +1,37 @@
 import { NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
+import prisma from "@/backend/prisma/client";
+
+function toNumber(value: unknown): number {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n);
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { order_id, gross_amount, items, customer_details, payment_type, bank } = body;
+    const { order_id, customer_details, payment_type, bank } = body;
+
+    if (!order_id) {
+      return NextResponse.json({ success: false, error: "order_id wajib diisi." }, { status: 400 });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: String(order_id) },
+      include: {
+        items: true,
+        user: true,
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ success: false, error: "Order tidak ditemukan." }, { status: 404 });
+    }
+
+    if (order.items.length === 0) {
+      return NextResponse.json({ success: false, error: "Order tidak memiliki item." }, { status: 400 });
+    }
 
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
     const isProduction = process.env.MIDTRANS_IS_PRODUCTION === "true";
@@ -27,9 +54,51 @@ export async function POST(request: Request) {
       serverKey,
     });
 
+    const grossAmount = toNumber(order.totalAmount);
+    const shippingFee = toNumber(order.shippingFee);
+
+    const dbItemDetails = order.items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: toNumber(item.price),
+      quantity: item.quantity,
+    }));
+
+    const itemPlusShipping = [
+      ...dbItemDetails,
+      ...(shippingFee > 0
+        ? [
+            {
+              id: `shipping-${order.id}`,
+              name: "Ongkos Kirim",
+              price: shippingFee,
+              quantity: 1,
+            },
+          ]
+        : []),
+    ];
+
+    const computedTotal = itemPlusShipping.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const itemDetails =
+      computedTotal === grossAmount
+        ? itemPlusShipping
+        : [
+            {
+              id: `order-${order.id}`,
+              name: `Order ${order.id}`,
+              price: grossAmount,
+              quantity: 1,
+            },
+          ];
+
+    const customerDetailsPayload = {
+      first_name: customer_details?.first_name || order.user?.name || "Customer",
+      email: customer_details?.email || order.user?.email || "",
+    };
+
     const transaction_details = {
-      order_id: order_id || `ORDER-${Date.now()}`,
-      gross_amount: Math.round(gross_amount),
+      order_id: String(order.id),
+      gross_amount: grossAmount,
     };
 
     // If payment_type is provided, try Core API first for direct charge
@@ -38,8 +107,8 @@ export async function POST(request: Request) {
         const parameter = {
           payment_type,
           transaction_details,
-          item_details: items,
-          customer_details,
+          item_details: itemDetails,
+          customer_details: customerDetailsPayload,
         } as Record<string, unknown>; // Using Record here because Midtrans payload is dynamic
 
         if (payment_type === "bank_transfer") {
@@ -68,8 +137,8 @@ export async function POST(request: Request) {
     // Fallback to Snap (Generic Popup)
     const payload = {
       transaction_details,
-      item_details: items,
-      customer_details,
+      item_details: itemDetails,
+      customer_details: customerDetailsPayload,
       usage_limit: 1,
     };
 
