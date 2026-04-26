@@ -322,8 +322,7 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                 </motion.button>
                 <button
                   type="button"
-                  className="pill-btn"
-                  style={{ marginTop: "0.7rem", width: "100%" }}
+                  className="pill-btn mt-3 w-full"
                   onClick={() => {
                     if (!product) return;
                     if (!user) {
@@ -331,13 +330,19 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                       router.push("/login?redirect=/catalogue");
                       return;
                     }
-                    toggleWishlistItem(product.id.toString());
+                    toggleWishlistItem({
+                      productId: product.id.toString(),
+                      name: product.name,
+                      image: product.image || product.imageUrl || "",
+                      price: product.price,
+                      category: product.category || "Uncategorized"
+                    });
                     setWishlistMessage(
                       wished ? "Dihapus dari wishlist." : "Ditambahkan ke wishlist."
                     );
                   }}
                 >
-                  <Heart size={14} style={{ marginRight: "0.4rem" }} />
+                  <Heart size={14} className="mr-2" />
                   {wished ? "Hapus dari Wishlist" : "Tambah ke Wishlist"}
                 </button>
                 {wishlistMessage && (

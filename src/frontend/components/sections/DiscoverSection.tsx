@@ -5,7 +5,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getProducts } from "@/frontend/lib/actions/catalogue";
-import type { DiscoverProduct } from "@/components/data/products";
+import type { CatalogueProduct } from "@/frontend/components/catalogue/types";
 
 import FilterBar from "../ui/FilterBar";
 import ProductCard from "../ui/ProductCard";
@@ -13,7 +13,7 @@ import AnimatedText from "../ui/AnimatedText";
 import SectionLabel from "../ui/SectionLabel";
 
 export default function DiscoverSection() {
-  const [products, setProducts] = useState<DiscoverProduct[]>([]);
+  const [products, setProducts] = useState<CatalogueProduct[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);

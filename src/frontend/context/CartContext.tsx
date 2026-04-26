@@ -38,21 +38,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCart = async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch("/api/cart");
-      const data = await res.json();
-      setItems(data.items || []);
-    } catch (err) {
-      console.error("Failed to fetch cart:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchCart();
+    let mounted = true;
+    const initCart = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch("/api/cart");
+        if (res.ok && mounted) {
+          const data = await res.json();
+          setItems(data.items || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch cart:", err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+    initCart();
+    return () => { mounted = false; };
   }, []);
 
   const addToCart = async (product: Product, variantId: string, quantity = 1) => {
@@ -69,8 +73,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) throw new Error(data.error || "Failed to add to cart");
       
       setItems(data.items || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
       throw err;
     } finally {
       setIsLoading(false);
@@ -88,8 +92,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) throw new Error(data.error || "Failed to remove item");
       
       setItems(data.items || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -108,8 +112,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) throw new Error(data.error || "Failed to update quantity");
       
       setItems(data.items || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
       throw err;
     } finally {
       setIsLoading(false);

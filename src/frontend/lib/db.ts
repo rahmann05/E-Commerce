@@ -3,6 +3,6 @@
  * PostgreSQL access via Prisma (compat wrapper).
  */
 
-import { prisma } from "@/lib/prisma";
+import prisma from "@/backend/prisma/client";
 
 export default prisma;

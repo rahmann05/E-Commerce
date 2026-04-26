@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { HERO_CLOTHING } from "../data/products";
+import Image from "next/image";
 
 interface TrailItem {
   id: number;
@@ -104,11 +105,7 @@ export default function CursorTrail({ containerRef }: CursorTrailProps) {
                 mixBlendMode: "lighten",
               }}
             >
-              <img
-                src={`${clothing.src}?v=3`}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
+              <Image src={`${clothing.src}?v=3`} alt="" fill style={{ objectFit: "contain" }} sizes="(max-width: 768px) 100vw, 20vw" />
             </motion.div>
           );
         })}

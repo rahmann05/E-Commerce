@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import RevealText from "../../ui/RevealText";
+import Image from "next/image";
 
 interface AboutEthosProps {
   studioModel2: string;
@@ -42,7 +43,7 @@ export default function AboutEthos({ studioModel2 }: AboutEthosProps) {
               border: "15px solid #f5f5f3"
             }}
           >
-            <img src={studioModel2} alt="Studio Ethics" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <Image src={studioModel2} alt="Studio Ethics" fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 50vw" />
           </motion.div>
       </div>
     </section>
