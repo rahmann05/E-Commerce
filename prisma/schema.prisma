@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,44 +11,74 @@ enum UserRole {
   ADMIN
 }
 
+enum OrderStatus {
+  AWAITING_PAYMENT
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum NotificationType {
+  ORDER
+  PROMO
+  SYSTEM
+}
+
 model User {
-  id             String          @id @default(cuid())
-  name           String?
-  email          String          @unique
-  password       String?
-  image          String?
-  phone          String?
-  address        String?
+  id                String   @id @default(cuid())
+  name              String?
+  email             String   @unique
+  password          String?
+  image             String?
+  phone             String?
+  address           String?
   paymentPreference String?
-  role           UserRole        @default(USER)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  role              UserRole @default(USER)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
   orders         Order[]
-  reviews        Review[]
   addresses      Address[]
   paymentMethods PaymentMethod[]
   wishlistItems  WishlistItem[]
-  vouchers       UserVoucher[]
   notifications  Notification[]
+  vouchers       UserVoucher[]
+  cart           Cart?
 }
 
 model Product {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  slug        String      @unique
+  slug        String   @unique
   description String
-  price       Decimal
-  rating      Int         @default(5)
+  price       Decimal  @db.Decimal(10, 2)
+  rating      Int      @default(5)
   sizes       String?
   colors      String[]
-  stock       Int
-  inStock     Boolean     @default(true)
+  stock       Int      @default(0)
+  inStock     Boolean  @default(true)
   images      String[]
-  category    Category    @relation(fields: [categoryId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
   categoryId  String
-  reviews     Review[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  wishlistItems WishlistItem[]
+  variants      ProductVariant[]
+  cartItems     CartItem[]
+}
+
+model ProductVariant {
+  id        String     @id @default(cuid())
+  productId String
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size      String
+  color     String?
+  stock     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  cartItems CartItem[]
 }
 
 model Category {
@@ -64,150 +89,142 @@ model Category {
   updatedAt DateTime  @updatedAt
 }
 
-model Address {
-  id          String   @id @default(cuid())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  label       String   @default("Rumah")
-  recipient   String?
-  phone       String?
-  line1       String
-  line2       String?
-  district    String?
-  city        String?
-  province    String?
-  postalCode  String?
-  latitude    Float?
-  longitude   Float?
-  country     String   @default("Indonesia")
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
-enum PaymentType {
-  VIRTUAL_ACCOUNT
-  CREDIT_CARD
-  COD
-  E_WALLET
-}
+model CartItem {
+  id               String         @id @default(cuid())
+  cartId           String
+  cart             Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id])
+  productVariantId String
+  variant          ProductVariant @relation(fields: [productVariantId], references: [id])
+  quantity         Int            @default(1)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-model PaymentMethod {
-  id              String      @id @default(cuid())
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
-  type            PaymentType
-  provider        String
-  accountNumber   String?
-  accountName     String?
-  accountMasked   String?
-  isDefault       Boolean     @default(false)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-}
-
-enum OrderStatus {
-  AWAITING_PAYMENT
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
+  @@unique([cartId, productVariantId])
 }
 
 model Order {
   id          String      @id @default(cuid())
-  user        User        @relation(fields: [userId], references: [id])
   userId      String
-  items       OrderItem[]
-  shippingFee Decimal     @default(0)
+  user        User        @relation(fields: [userId], references: [id])
+  addressId   String?
+  address     Address?    @relation(fields: [addressId], references: [id])
+  totalAmount Decimal     @db.Decimal(10, 2)
+  shippingFee Decimal     @default(0) @db.Decimal(10, 2)
+  status      OrderStatus @default(AWAITING_PAYMENT)
   courier     String?
   notes       String?
   promoCode   String?
-  totalAmount Decimal
-  status      OrderStatus @default(AWAITING_PAYMENT)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  items OrderItem[]
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  order     Order   @relation(fields: [orderId], references: [id])
+  id        String   @id @default(cuid())
   orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  productName String
+  name      String
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
   size      String?
   color     String?
   imageUrl  String?
-  quantity  Int
-  price     Decimal
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String   @default("Rumah")
+  recipient  String?
+  phone      String?
+  line1      String
+  district   String?
+  city       String?
+  province   String?
+  postalCode String?
+  latitude   Float?
+  longitude  Float?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders Order[]
+}
+
+model PaymentMethod {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  accountNumber String?
+  accountName   String?
+  isPrimary     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model WishlistItem {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId String
-  productName String
-  productImage String
-  productPrice Decimal
-  category String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([userId, productId])
 }
 
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType @default(SYSTEM)
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
 model Voucher {
-  id          String        @id @default(cuid())
-  code        String        @unique
+  id          String    @id @default(cuid())
+  code        String    @unique
   title       String
   description String?
   discountPct Int?
-  discountFix Decimal?
+  discountFix Decimal?  @db.Decimal(10, 2)
   startsAt    DateTime?
   expiresAt   DateTime?
-  isActive    Boolean       @default(true)
-  users       UserVoucher[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users UserVoucher[]
 }
 
 model UserVoucher {
   id         String    @id @default(cuid())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
-  voucher    Voucher   @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   voucherId  String
+  voucher    Voucher   @relation(fields: [voucherId], references: [id], onDelete: Cascade)
   redeemedAt DateTime?
   createdAt  DateTime  @default(now())
 
   @@unique([userId, voucherId])
-}
-
-enum NotificationType {
-  ORDER
-  PROMO
-  SYSTEM
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  type      NotificationType @default(SYSTEM)
-  title     String
-  message   String
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
 }
