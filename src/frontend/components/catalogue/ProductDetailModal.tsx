@@ -9,6 +9,7 @@ import type { CatalogueProduct } from "./types";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useProfileData } from "@/context/ProfileDataContext";
+import ProductReviews from "@/components/reviews/ProductReviews";
 
 interface Props {
   product: CatalogueProduct | null;
@@ -398,6 +399,8 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                 >
                   Free shipping on orders above Rp500k · Easy 30-day returns
                 </div>
+
+                <ProductReviews productId={product.id.toString()} />
               </motion.div>
             </div>
           </motion.div>

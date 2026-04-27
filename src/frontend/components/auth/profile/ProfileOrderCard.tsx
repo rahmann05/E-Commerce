@@ -16,7 +16,8 @@ export interface MockOrder {
   details: string; // e.g., "Size: M · Color: Sage Green · Qty: 1"
   imageUrl: string;
   total: string;
-  status: "delivered" | "processing" | "shipped" | "awaiting_payment" | "cancelled";
+  status: "delivered" | "processing" | "shipped" | "awaiting_payment" | "cancelled" | "AWAITING_PAYMENT" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  productId?: string;
 }
 
 const STATUS_LABELS: Record<MockOrder["status"], string> = {
@@ -32,8 +33,16 @@ interface ProfileOrderCardProps {
   delay?: number;
 }
 
+import { useState } from "react";
+import ReviewModal from "@/components/reviews/ReviewModal";
+
 export default function ProfileOrderCard({ order }: ProfileOrderCardProps) {
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+
+  const isPaid = ["processing", "shipped", "delivered", "PROCESSING", "SHIPPED", "DELIVERED"].includes(order.status);
+
   return (
+    <>
     <div
       style={{ 
         display: "flex",
@@ -126,7 +135,47 @@ export default function ProfileOrderCard({ order }: ProfileOrderCardProps) {
             Bayar Sekarang
           </Link>
         )}
+        {isPaid && order.productId && (
+          <button 
+            onClick={() => setIsReviewOpen(true)}
+            className="repay-btn"
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            style={{
+              marginTop: "0.5rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              color: "#111",
+              background: "#f3f4f6",
+              padding: "0.5rem 1rem",
+              borderRadius: "999px",
+              border: "1px solid #e5e7eb",
+              cursor: "pointer",
+              transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+          >
+            Berikan Ulasan
+          </button>
+        )}
       </div>
     </div>
+    
+    {isReviewOpen && order.productId && (
+      <ReviewModal 
+        productId={order.productId}
+        orderId={order.id}
+        productName={order.productName}
+        productImage={order.imageUrl}
+        onClose={() => setIsReviewOpen(false)}
+        onSuccess={() => {
+          setIsReviewOpen(false);
+          alert("Ulasan berhasil dikirim! Terima kasih.");
+        }}
+      />
+    )}
+    </>
   );
 }

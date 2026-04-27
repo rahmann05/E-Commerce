@@ -49,6 +49,33 @@ export async function GET(request: Request) {
 
     const statusResponse = await core.transaction.status(orderId);
 
+    // Sync status to database to support localhost where webhooks cannot reach
+    const transactionStatus = statusResponse.transaction_status;
+    const fraudStatus = statusResponse.fraud_status;
+
+    let newStatus = undefined; // Use undefined so we only update if we have a valid mapping
+
+    if (transactionStatus === "capture") {
+      if (fraudStatus === "challenge") {
+        newStatus = "AWAITING_PAYMENT";
+      } else if (fraudStatus === "accept") {
+        newStatus = "PROCESSING";
+      }
+    } else if (transactionStatus === "settlement") {
+      newStatus = "PROCESSING";
+    } else if (transactionStatus === "cancel" || transactionStatus === "deny" || transactionStatus === "expire") {
+      newStatus = "CANCELLED";
+    } else if (transactionStatus === "pending") {
+      newStatus = "AWAITING_PAYMENT";
+    }
+
+    if (newStatus) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: newStatus as any },
+      });
+    }
+
     return NextResponse.json({
       success: true,
       ...statusResponse

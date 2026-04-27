@@ -168,19 +168,8 @@ export async function POST(request: Request) {
           ...chargeResponse
         });
       } catch (coreError: any) {
-        console.error("Midtrans Core API Error Details:", {
-          message: coreError.message,
-          ApiResponse: coreError.ApiResponse,
-          statusCode: coreError.statusCode
-        });
-        
-        const msg = coreError.message || "Gagal memproses pembayaran.";
-        
-        return NextResponse.json({ 
-          success: false, 
-          error: msg,
-          details: coreError.ApiResponse || coreError
-        }, { status: 400 });
+        console.warn("Midtrans Core API Error, falling back to Snap:", coreError.message);
+        // Let it fall through to Snap fallback below
       }
     }
 

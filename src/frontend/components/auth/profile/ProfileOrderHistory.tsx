@@ -41,6 +41,7 @@ export default function ProfileOrderHistory({ orders }: ProfileOrderHistoryProps
               imageUrl: primaryItem?.imageUrl ?? "/images/model1.jpg",
               total: formatPrice(order.total),
               status: order.status as any,
+              productId: primaryItem?.productId
             };
             return <ProfileOrderCard key={order.id} order={displayOrder} />;
           })

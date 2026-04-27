@@ -45,6 +45,7 @@ model User {
   notifications  Notification[]
   vouchers       UserVoucher[]
   cart           Cart?
+  reviews        Review[]
 }
 
 model Product {
@@ -69,6 +70,7 @@ model Product {
   wishlistItems WishlistItem[]
   variants      ProductVariant[]
   cartItems     CartItem[]
+  reviews       Review[]
 }
 
 model ProductVariant {
@@ -131,6 +133,7 @@ model Order {
   updatedAt   DateTime    @updatedAt
 
   items OrderItem[]
+  reviews Review[]
 }
 
 model OrderItem {
@@ -229,4 +232,20 @@ model UserVoucher {
   createdAt  DateTime  @default(now())
 
   @@unique([userId, voucherId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  rating    Int      @default(5)
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId, orderId])
 }

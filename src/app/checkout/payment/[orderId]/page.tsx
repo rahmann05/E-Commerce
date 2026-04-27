@@ -45,7 +45,7 @@ export default function PaymentStatusPage() {
   const { user } = useAuth();
   const { orders } = useProfileData();
   const orderId = params.orderId as string;
-  
+
   const [status, setStatus] = useState<MidtransStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,16 +53,16 @@ export default function PaymentStatusPage() {
 
   // Find the order in local context
   const localOrder = useMemo(() => {
-    return orders.find(o => String(o.id) === String(orderId));
+    return orders.find((o) => String(o.id) === String(orderId));
   }, [orders, orderId]);
 
   const fetchStatus = async (isRetry = false) => {
     if (!isRetry) setLoading(true);
-    
+
     try {
       const res = await fetch(`/api/checkout/midtrans/status?orderId=${orderId}`);
       const data = await res.json();
-      
+
       if (data.success) {
         setStatus(data);
         setLoading(false);
@@ -71,7 +71,7 @@ export default function PaymentStatusPage() {
         if (methodKey) {
           await initiateCharge(methodKey);
         } else {
-          // No method in URL, and no status in Midtrans yet. 
+          // No method in URL, and no status in Midtrans yet.
           // Let the user choose a method.
           setLoading(false);
         }
@@ -96,7 +96,7 @@ export default function PaymentStatusPage() {
       setTimeout(() => {
         if (!status && !error) fetchStatus(true);
       }, 1500);
-      
+
       setTimeout(() => {
         if (loading && !status && !error) {
           setError("Pesanan tidak ditemukan. Mohon cek daftar pesanan Anda.");
@@ -120,7 +120,7 @@ export default function PaymentStatusPage() {
           customer_details: {
             first_name: user?.name,
             email: user?.email,
-          }
+          },
         }),
       });
 
@@ -181,14 +181,14 @@ export default function PaymentStatusPage() {
 
   const qrAction = useMemo(() => {
     if (!status || !status.actions) return null;
-    return status.actions.find(a => a.name === "generate-qr-code");
+    return status.actions.find((a) => a.name === "generate-qr-code");
   }, [status]);
 
   const formatPrice = (price: string | number | undefined) => {
     if (price === undefined || price === null) return "Rp0";
     const numericPrice = typeof price === "string" ? parseFloat(price) : price;
     if (isNaN(numericPrice)) return "Rp0";
-    
+
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
@@ -214,7 +214,9 @@ export default function PaymentStatusPage() {
           <h1 style={{ color: "#ef4444", fontSize: "1.5rem", marginBottom: "1rem" }}>Oops!</h1>
           <p style={{ color: "#666", marginBottom: "2rem" }}>{error}</p>
           <div className="payment-actions">
-            <Link href="/profile?tab=orders" className="btn-primary">Kembali ke Pesanan</Link>
+            <Link href="/profile?tab=orders" className="btn-primary">
+              Kembali ke Pesanan
+            </Link>
           </div>
         </div>
       </div>
@@ -222,7 +224,7 @@ export default function PaymentStatusPage() {
   }
 
   const isSettled = status?.transaction_status === "settlement" || status?.transaction_status === "capture";
-  const isPending = status?.transaction_status === "pending";
+  const isPending = status?.transaction_status === "pending" || (!status?.transaction_status && status?.method === "snap");
   const isFailed = ["deny", "cancel", "expire"].includes(status?.transaction_status || "");
 
   const getStatusLabel = () => {
@@ -253,9 +255,7 @@ export default function PaymentStatusPage() {
 
           <div className="payment-amount-card">
             <div className="payment-amount-label">Total Pembayaran</div>
-            <div className="payment-amount-value">
-              {formatPrice(status?.gross_amount || localOrder?.total)}
-            </div>
+            <div className="payment-amount-value">{formatPrice(status?.gross_amount || localOrder?.total)}</div>
           </div>
 
           {status && (
@@ -266,14 +266,14 @@ export default function PaymentStatusPage() {
               </div>
               <div className="detail-row">
                 <span className="detail-label">Status</span>
-                <span className={`status-badge status-${status.transaction_status}`}>
-                  {isPending ? "MENUNGGU" : status.transaction_status?.toUpperCase() || "MEMPROSES"}
-                </span>
+                <span className={`status-badge status-${status.transaction_status}`}>{isPending ? "MENUNGGU" : status.transaction_status?.toUpperCase() || "MEMPROSES"}</span>
               </div>
               {status.expiry_time && isPending && (
                 <div className="detail-row">
                   <span className="detail-label">Batas Waktu</span>
-                  <span className="detail-value" style={{ color: "#ef4444", fontWeight: "600" }}>{status.expiry_time}</span>
+                  <span className="detail-value" style={{ color: "#ef4444", fontWeight: "600" }}>
+                    {status.expiry_time}
+                  </span>
                 </div>
               )}
             </div>
@@ -287,8 +287,8 @@ export default function PaymentStatusPage() {
                   {localOrder.address?.recipient || user?.name} | {localOrder.address?.phone || "-"}
                 </div>
                 <div style={{ fontSize: "0.85rem", color: "#444", lineHeight: 1.5 }}>
-                  {localOrder.address?.line1} <br/>
-                  {localOrder.address?.district}, {localOrder.address?.city} <br/>
+                  {localOrder.address?.line1} <br />
+                  {localOrder.address?.district}, {localOrder.address?.city} <br />
                   {localOrder.address?.province}, {localOrder.address?.postalCode}
                 </div>
               </div>
@@ -299,11 +299,9 @@ export default function PaymentStatusPage() {
             <div style={{ marginTop: "1rem" }}>
               {status.method === "snap" && status.redirect_url && (
                 <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-                  <p style={{ fontSize: "0.85rem", marginBottom: "1rem", color: "#666" }}>
-                    Pembayaran diproses melalui Snap. Klik tombol di bawah jika jendela tidak terbuka.
-                  </p>
-                  <a href={status.redirect_url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-block' }}>
-                    Bayar Sekarang (Snap)
+                  <p style={{ fontSize: "0.85rem", marginBottom: "1rem", color: "#666" }}>Pembayaran diproses melalui Snap. Klik tombol di bawah jika jendela tidak terbuka.</p>
+                  <a href={status.redirect_url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: "inline-block" }}>
+                    Bayar Sekarang
                   </a>
                 </div>
               )}
@@ -320,10 +318,10 @@ export default function PaymentStatusPage() {
 
               {qrAction && (
                 <div className="qris-container">
-                   <div style={{ textAlign: "center" }}>
-                     <p style={{ fontSize: "0.85rem", marginBottom: "1rem", color: "#666" }}>Scan kode QR di bawah ini</p>
-                     <img src={qrAction.url} alt="QRIS Code" className="qris-img" />
-                   </div>
+                  <div style={{ textAlign: "center" }}>
+                    <p style={{ fontSize: "0.85rem", marginBottom: "1rem", color: "#666" }}>Scan kode QR di bawah ini</p>
+                    <img src={qrAction.url} alt="QRIS Code" className="qris-img" />
+                  </div>
                 </div>
               )}
 
@@ -331,7 +329,9 @@ export default function PaymentStatusPage() {
                 <h3>Cara Pembayaran</h3>
                 <ul className="instructions-list">
                   <li>1. Buka aplikasi Mobile Banking atau ATM anda.</li>
-                  <li>2. Pilih menu <span>Transfer / Pembayaran</span>.</li>
+                  <li>
+                    2. Pilih menu <span>Transfer / Pembayaran</span>.
+                  </li>
                   <li>3. Masukkan nomor Virtual Account / Scan QRIS di atas.</li>
                   <li>4. Pastikan jumlah nominal sudah sesuai.</li>
                   <li>5. Simpan bukti transaksi anda.</li>
@@ -344,24 +344,34 @@ export default function PaymentStatusPage() {
             {isPending ? (
               <>
                 <button onClick={() => fetchStatus(true)} className="btn-primary" disabled={loading}>
-                   {loading ? "Mengecek..." : "Saya Sudah Bayar"}
+                  {loading ? "Mengecek..." : "Saya Sudah Bayar"}
                 </button>
                 <Link href="/profile?tab=orders" className="btn-secondary">
                   Lihat Daftar Pesanan
                 </Link>
               </>
-            ) : (!status || (!status.transaction_status && status.method !== "snap")) ? (
+            ) : !status || (!status.transaction_status && status.method !== "snap") ? (
               <div style={{ width: "100%", marginTop: "1rem" }}>
-                <p style={{ textAlign: "center", fontSize: "0.85rem", color: "#666", marginBottom: "1.5rem" }}>
-                  Pilih metode pembayaran untuk melanjutkan
-                </p>
+                <p style={{ textAlign: "center", fontSize: "0.85rem", color: "#666", marginBottom: "1.5rem" }}>Pilih metode pembayaran untuk melanjutkan</p>
                 <div className="payment-options-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                  <button onClick={() => initiateCharge("qris")} className="btn-method">QRIS / E-Wallet</button>
-                  <button onClick={() => initiateCharge("gopay")} className="btn-method">GoPay</button>
-                  <button onClick={() => initiateCharge("bca_va")} className="btn-method">BCA Virtual Account</button>
-                  <button onClick={() => initiateCharge("mandiri_va")} className="btn-method">Mandiri Bill</button>
-                  <button onClick={() => initiateCharge("bni_va")} className="btn-method">BNI Virtual Account</button>
-                  <button onClick={() => initiateCharge("alfamart")} className="btn-method">Alfamart</button>
+                  <button onClick={() => initiateCharge("qris")} className="btn-method">
+                    QRIS / E-Wallet
+                  </button>
+                  <button onClick={() => initiateCharge("gopay")} className="btn-method">
+                    GoPay
+                  </button>
+                  <button onClick={() => initiateCharge("bca_va")} className="btn-method">
+                    BCA Virtual Account
+                  </button>
+                  <button onClick={() => initiateCharge("mandiri_va")} className="btn-method">
+                    Mandiri Bill
+                  </button>
+                  <button onClick={() => initiateCharge("bni_va")} className="btn-method">
+                    BNI Virtual Account
+                  </button>
+                  <button onClick={() => initiateCharge("alfamart")} className="btn-method">
+                    Alfamart
+                  </button>
                 </div>
               </div>
             ) : (
