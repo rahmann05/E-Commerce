@@ -162,6 +162,7 @@ export default function ImmersiveSlider3D({ items }: ImmersiveSlider3DProps) {
       <div style={{ position: "absolute", bottom: "0", display: "flex", gap: "1.5rem", zIndex: 20 }}>
         <button 
           onClick={prev}
+          aria-label="Previous slide"
           style={{ 
             background: "#fff", 
             border: "1px solid rgba(0,0,0,0.05)",
@@ -192,6 +193,7 @@ export default function ImmersiveSlider3D({ items }: ImmersiveSlider3DProps) {
         </button>
         <button 
           onClick={next}
+          aria-label="Next slide"
           style={{ 
             background: "#fff", 
             border: "1px solid rgba(0,0,0,0.05)",
