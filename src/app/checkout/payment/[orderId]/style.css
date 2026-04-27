@@ -123,6 +123,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
 }
 

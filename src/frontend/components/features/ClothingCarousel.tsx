@@ -5,7 +5,7 @@ import type { MotionValue } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-type ClothingItem = any;
+type ClothingItem = { id: string; name: string; price: number; image: string; description: string };
 
 interface ClothingCarouselProps {
   currentTee: ClothingItem;
@@ -45,6 +45,7 @@ export default function ClothingCarousel({
       {/* Controls + Cards */}
       <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
         <button
+          aria-label="Previous combination"
           onClick={onPrev}
           style={{
             width: 54,
@@ -111,6 +112,7 @@ export default function ClothingCarousel({
         </div>
 
         <button
+          aria-label="Next combination"
           onClick={onNext}
           style={{
             width: 54,

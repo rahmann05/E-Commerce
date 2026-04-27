@@ -8,6 +8,8 @@
 import { useState, type FormEvent } from "react";
 import type { SessionUser } from "@/lib/mock-users";
 import { motion } from "framer-motion";
+import "./profile.css";
+
 interface ProfileInfoCardProps {
   user: SessionUser;
   onSave: (payload: { name: string; phone: string }) => void;
@@ -29,11 +31,12 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
   return (
     <section>
       <p className="profile-section-title">Informasi Pribadi</p>
-      <form onSubmit={handleSave} style={{ maxWidth: "500px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+      <form onSubmit={handleSave} className="profile-info-form">
+        <div className="profile-info-grid">
           <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <label className="auth-input-label">Nama Depan</label>
+            <label htmlFor="info-first-name" className="auth-input-label">Nama Depan</label>
             <input 
+              id="info-first-name"
               type="text" 
               className="auth-input" 
               value={formData.firstName}
@@ -41,8 +44,9 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
             />
           </motion.div>
           <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <label className="auth-input-label">Nama Belakang</label>
+            <label htmlFor="info-last-name" className="auth-input-label">Nama Belakang</label>
             <input 
+              id="info-last-name"
               type="text" 
               className="auth-input" 
               value={formData.lastName}
@@ -52,19 +56,20 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
         </div>
 
         <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <label className="auth-input-label">Email</label>
+          <label htmlFor="info-email" className="auth-input-label">Email</label>
           <input 
+            id="info-email"
             type="email" 
-            className="auth-input" 
+            className="auth-input disabled-input" 
             value={user.email}
             disabled
-            style={{ color: "rgba(0,0,0,0.5)" }}
           />
         </motion.div>
 
         <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <label className="auth-input-label">No. Telepon</label>
+          <label htmlFor="info-phone" className="auth-input-label">No. Telepon</label>
           <input 
+            id="info-phone"
             type="tel" 
             className="auth-input" 
             value={formData.phone}
@@ -75,8 +80,7 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
 
         <motion.button 
           type="submit"
-          className="pill-btn"
-          style={{ marginTop: "1rem", background: "#111", color: "#fff", border: "none" }}
+          className="pill-btn profile-submit-btn"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
         >
           Simpan Perubahan
