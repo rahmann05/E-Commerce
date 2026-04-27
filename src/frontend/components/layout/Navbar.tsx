@@ -15,6 +15,8 @@ export default function Navbar() {
 
   // On non-home pages the navbar is always visible
   const isHome = pathname === "/";
+  const isProfile = pathname === "/profile";
+  const isDarkPage = isHome || isProfile;
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     if (isHome) {
@@ -30,8 +32,6 @@ export default function Navbar() {
   // Always show on sub-pages
   const shouldShow = !isHome || visible;
 
-  const isProfile = pathname === "/profile";
-  const isDarkPage = isHome || isProfile;
 
   // Determine colors
   const navBg = scrolled 
@@ -65,18 +65,13 @@ export default function Navbar() {
         transition: "background 0.3s ease, color 0.3s ease"
       }}
     >
-      <style jsx global>{`
-        .main-navbar a { color: ${navTextColor} !important; }
-        .main-navbar .brand { color: ${navTextColor} !important; }
-        .navbar-auth-link { color: ${navTextColor} !important; }
-      `}</style>
-      <div className="main-navbar">
+      <div className="main-navbar" style={{ color: navTextColor }}>
         <div style={{ display: "flex", gap: "2.5rem" }}>
-          <Link href="/">Home</Link>
-          <Link href="/catalogue">Catalogue</Link>
-          <Link href="/about">About Us</Link>
+          <Link href="/" style={{ color: "inherit" }}>Home</Link>
+          <Link href="/catalogue" style={{ color: "inherit" }}>Catalogue</Link>
+          <Link href="/about" style={{ color: "inherit" }}>About Us</Link>
         </div>
-        <Link href="/" className="brand">
+        <Link href="/" className="brand" style={{ color: "inherit" }}>
           Novure
         </Link>
         <div style={{ display: "flex", gap: "2.5rem", alignItems: "center" }}>

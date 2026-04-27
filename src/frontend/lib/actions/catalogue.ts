@@ -8,7 +8,7 @@
 
 import prisma from "@/backend/prisma/client";
 import type { CatalogueProduct } from "@/components/catalogue/types";
-// import { CATALOGUE_PRODUCTS_FALLBACK } from "@/components/data/products"; // REMOVED MOCK
+import { getImageUrl } from "@/frontend/lib/image-utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ function rowToProduct(
           ? `${options[0]} - ${options[options.length - 1]}`
           : options[0]
         : "S - XXL"),
-    image: images[0] ?? "/images/tees1.png",
+    image: getImageUrl(images[0] ?? "/images/tees1.png"),
     colors: colors,
     sizeOptions: options,
     sizeStocks: stocks,
@@ -185,7 +185,7 @@ export async function getCarouselImages(): Promise<string[]> {
       select: { images: true },
       take: 8,
     });
-    return products.flatMap(p => p.images).filter((img): img is string => !!img);
+    return products.flatMap(p => p.images).filter((img): img is string => !!img).map(img => getImageUrl(img));
   } catch (err) {
     console.error("[DB] getCarouselImages failed:", err);
     throw err;

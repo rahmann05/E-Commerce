@@ -27,7 +27,7 @@ export const TEAM: TeamMember[] = [
     role: "Chief Executive Officer",
     bio: "With a strategic mind and passion for disrupting fast fashion, Bayu drives Novure's mission to make premium essentials accessible to everyone.",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-    accent: "#ff8c00",
+    accent: "#9cad8f",
   },
   {
     name: "Zilal Afwu Rahman",

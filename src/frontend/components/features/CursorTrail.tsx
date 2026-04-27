@@ -5,6 +5,8 @@ import { useCallback, useRef, useState } from "react";
 import { HERO_CLOTHING } from "../data/products";
 import Image from "next/image";
 
+import { getImageUrl } from "@/frontend/lib/image-utils";
+
 interface TrailItem {
   id: number;
   x: number;
@@ -105,7 +107,7 @@ export default function CursorTrail({ containerRef }: CursorTrailProps) {
                 mixBlendMode: "lighten",
               }}
             >
-              <Image src={clothing.src} alt="" fill style={{ objectFit: "contain" }} sizes="(max-width: 768px) 100vw, 20vw" />
+              <Image src={getImageUrl(clothing.src)} alt="" fill style={{ objectFit: "contain" }} sizes="(max-width: 768px) 100vw, 20vw" />
             </motion.div>
           );
         })}

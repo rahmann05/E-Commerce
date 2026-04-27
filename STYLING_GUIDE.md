@@ -28,7 +28,7 @@
 :root {
   --background: #f5f5f3;          /* Off-white warm — background terang */
   --foreground: #111111;          /* Near-black — teks utama */
-  --color-primary: #ff8c00;       /* Orange — accent utama */
+  --color-primary: #9cad8f;       /* Sage Green — accent utama */
   --color-accent-purple: #9b51e0; /* Purple — glow/ambient */
   --color-accent-green: #27ae60;  /* Green — glow/ambient */
   --color-muted: #999999;         /* Gray — teks sekunder */
@@ -43,7 +43,7 @@
 | **Light BG** | `#f5f5f3` | Essentialized section, body default |
 | **White BG** | `#ffffff` | Discover section, floating cards |
 | **Card BG** | `#f0f0ef` | Product card background, filter pill |
-| **Primary Orange** | `#ff8c00` | Text selection, accent, color theme |
+| **Primary Sage** | `#9cad8f` | Text selection, accent, color theme |
 | **Purple Glow** | `rgba(155,81,224,...)` | GlowOrb di Hero & Science |
 | **Green Glow** | `rgba(39,174,96,...)` | GlowOrb di Science section |
 
@@ -541,7 +541,7 @@ background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%,
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
 /* Selection */
-::selection { background: rgba(255, 140, 0, 0.3); color: #111; }
+::selection { background: rgba(156, 173, 143, 0.4); color: #111; }
 ```
 
 ---

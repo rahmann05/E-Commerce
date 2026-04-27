@@ -13,7 +13,7 @@ export interface ColorTheme {
 export const COLOR_THEMES: ColorTheme[] = [
   {
     name: "amber",
-    primary: "#ff8c00",
+    primary: "#9cad8f",
     secondary: "#ffb347",
     tertiary: "#ffd180",
     accent: "#e67300",

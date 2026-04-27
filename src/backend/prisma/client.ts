@@ -14,7 +14,7 @@ const prismaClientSingleton = () => {
   
   return new PrismaClient({ 
     adapter 
-  } as any);
+  });
 };
 
 declare global {

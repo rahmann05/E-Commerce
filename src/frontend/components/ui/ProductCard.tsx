@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import { useState } from "react";
+import { getImageUrl } from "@/frontend/lib/image-utils";
 type DiscoverProduct = any;
 
 interface ProductCardProps {
@@ -35,7 +36,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
     >
       <div className="product-card-image">
         <Image
-          src={product.image || "/images/model1.jpg"}
+          src={getImageUrl(product.image || "model1.jpg")}
           alt={product.name}
           fill
           className="object-cover object-top"

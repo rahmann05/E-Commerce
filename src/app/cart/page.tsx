@@ -17,16 +17,21 @@ function formatPrice(price: number): string {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-function getActualPrice(price: number): number {
-  return price < 10000 ? price * 1000 : price;
+function getActualPrice(price: any): number {
+  const p = Number(price ?? 0);
+  return p < 10000 ? p * 1000 : p;
 }
+
+import { getImageUrl } from "@/frontend/lib/image-utils";
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
 
-  const actualCartTotal = items.reduce((total, item) => total + getActualPrice(item.product.price) * item.quantity, 0);
+  // Filter out invalid items and calculate total
+  const validItems = items.filter(item => item && item.product);
+  const actualCartTotal = validItems.reduce((total, item) => total + getActualPrice(item.product.price) * item.quantity, 0);
 
   // Total is now just the subtotal (removing shipping fee as requested)
   const finalTotal = actualCartTotal;
@@ -71,7 +76,7 @@ export default function CartPage() {
               </header>
 
               <AnimatePresence>
-                {items.map((item, index) => (
+                {validItems.map((item, index) => (
                   <motion.div 
                     key={item.id}
                     className="cart-item-row"
@@ -82,13 +87,12 @@ export default function CartPage() {
                   >
                     {/* Product Image */}
                     <div className="cart-item-image">
-                      {(() => {
-                        const src = item.product.imageUrl || 
-                                    item.product.image || 
-                                    (item.product.images && item.product.images.length > 0 ? item.product.images[0] : null) || 
-                                    "/images/placeholder.png";
-                        return <Image src={src} alt={item.product.name} fill style={{ objectFit: "cover" }} />;
-                      })()}
+                      <Image 
+                        src={getImageUrl(item.product.imageUrl || item.product.image || (item.product.images && item.product.images[0]))} 
+                        alt={item.product.name} 
+                        fill 
+                        style={{ objectFit: "cover" }} 
+                      />
                     </div>
 
                     {/* Details */}

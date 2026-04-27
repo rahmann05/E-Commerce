@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { getCarouselImages } from "@/frontend/lib/actions/catalogue";
 import Image from "next/image";
 
+import { getImageUrl } from "@/frontend/lib/image-utils";
+
 interface InfiniteMarqueeProps {
   /** Animation duration in seconds */
   speed?: number;
@@ -45,7 +47,7 @@ export default function InfiniteMarquee({ speed = 25, itemHeight = 380 }: Infini
             }}
           >
             <img
-              src={src || "/images/model1.jpg"}
+              src={getImageUrl(src || "model1.jpg")}
               alt="Clothing"
               style={{
                 width: "90%",

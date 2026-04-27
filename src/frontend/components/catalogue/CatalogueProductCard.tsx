@@ -34,7 +34,7 @@ export default function CatalogueProductCard({ product, onClick }: Props) {
       {/* Image container */}
       <div className="cat-product-image">
         <Image
-          src={(((product.image || "/images/model1.jpg") || "/images/model1.jpg") || "/images/model1.jpg")}
+          src={product.images?.[0] || product.image || "/images/model1.jpg"}
           alt={product.name}
           fill
           className="object-cover object-top"

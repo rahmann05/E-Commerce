@@ -15,7 +15,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-[#f5f5f3] relative overflow-hidden">
       {/* Decorative Orbs with correct types */}
-      <GlowOrb color="rgba(255, 140, 0, 0.15)" size={800} top="-200px" right="-200px" />
+      <GlowOrb color="rgba(156, 173, 143, 0.2)" size={800} top="-200px" right="-200px" />
       <GlowOrb color="rgba(155, 81, 224, 0.1)" size={600} bottom="-100px" left="-100px" />
       
       {/* Sections with required props */}

@@ -5,6 +5,7 @@ import type { MotionValue } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getImageUrl } from "@/frontend/lib/image-utils";
 type ClothingItem = { id: string; name: string; price: number; image: string; description: string };
 
 interface ClothingCarouselProps {
@@ -62,7 +63,7 @@ export default function ClothingCarousel({
         >
           <ChevronLeft size={28} color="#111" />
         </button>
-
+ 
         <div style={{ width: 640, position: "relative" }}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -78,11 +79,11 @@ export default function ClothingCarousel({
                 style={{ flex: 1, padding: "2rem", width: "auto", height: "300px" }}
               >
                 <span className="card-label" style={{ fontSize: "1.1rem" }}>
-                  {currentTee.name}
+                   {currentTee.name}
                 </span>
                 <div className="card-image" style={{ height: "220px" }}>
                   <Image
-                    src={currentTee.image || "/images/model1.jpg"}
+                    src={getImageUrl(currentTee.image || "model1.jpg")}
                     alt={currentTee.name || "Clothing Item"}
                     fill
                     className="object-contain"
@@ -99,7 +100,7 @@ export default function ClothingCarousel({
                 </span>
                 <div className="card-image" style={{ height: "220px" }}>
                   <Image
-                    src={currentJeans.image || "/images/model1.jpg"}
+                    src={getImageUrl(currentJeans.image || "model1.jpg")}
                     alt={currentJeans.name || "Clothing Item"}
                     fill
                     className="object-contain"

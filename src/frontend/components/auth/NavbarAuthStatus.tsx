@@ -37,7 +37,7 @@ export default function NavbarAuthStatus() {
 
   if (!user) {
     return (
-      <Link href="/login" className="navbar-auth-link">
+      <Link href="/login" className="navbar-auth-link" style={{ color: "inherit" }}>
         Login
       </Link>
     );
@@ -46,7 +46,7 @@ export default function NavbarAuthStatus() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
       {/* Profile link with avatar */}
-      <Link href="/profile" className="navbar-auth-link">
+      <Link href="/profile" className="navbar-auth-link" style={{ color: "inherit" }}>
         <span className="navbar-avatar-sm">{getInitials(user.name)}</span>
         {(user.name || user.email.split("@")[0]).split(" ")[0]}
       </Link>

@@ -93,17 +93,17 @@ export default function EssentializedSection() {
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="main-navbar">
+        <div className="main-navbar" style={{ color: "#111" }}>
           <div style={{ display: "flex", gap: "2.5rem" }}>
-            <Link href="/catalogue">Male</Link>
-            <Link href="/about">About Us</Link>
+            <Link href="/catalogue" style={{ color: "inherit" }}>Male</Link>
+            <Link href="/about" style={{ color: "inherit" }}>About Us</Link>
           </div>
-          <Link href="/" className="brand">
+          <Link href="/" className="brand" style={{ color: "inherit" }}>
             Novure
           </Link>
-          <div style={{ display: "flex", gap: "2.5rem" }}>
-            <Link href="/profile">Wishlist</Link>
-            <Link href="/cart">My Cart</Link>
+          <div style={{ display: "flex", gap: "2.5rem", alignItems: "center" }}>
+            <Link href="/profile" style={{ color: "inherit" }}>Profile</Link>
+            <Link href="/cart" style={{ color: "inherit" }}>Cart</Link>
           </div>
         </div>
       </motion.div>
