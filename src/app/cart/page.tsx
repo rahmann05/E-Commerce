@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, X, ArrowRight } from "lucide-react";
+import { Minus, Plus, X, ArrowRight, ShoppingBag } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import "./cart.css";
@@ -38,12 +38,28 @@ export default function CartPage() {
         <div className="cart-container">
         
         {items.length === 0 ? (
-          <div className="cart-empty-state">
-            <p>Tas belanja Anda masih kosong.</p>
-            <Link href="/catalogue" className="pill-btn cart-empty-link">
+          <motion.div 
+            className="cart-empty-state-v2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="cart-empty-icon-container">
+              <div className="cart-empty-icon-bg" />
+              <div className="cart-empty-icon-inner">
+                <ShoppingBag size={48} strokeWidth={1.5} />
+              </div>
+            </div>
+            <h2 className="cart-empty-title">Tas Belanja Kosong</h2>
+            <p className="cart-empty-text">
+              Sepertinya Anda belum menambahkan apa pun ke tas belanja Anda. <br />
+              Temukan sesuatu yang spesial untuk Anda hari ini.
+            </p>
+            <Link href="/catalogue" className="cart-empty-cta">
               Mulai Belanja
+              <ArrowRight size={18} />
             </Link>
-          </div>
+          </motion.div>
         ) : (
           <div className="cart-content-grid">
             
