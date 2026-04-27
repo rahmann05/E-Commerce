@@ -21,6 +21,10 @@ export class CartService {
       throw new Error("Variant produk tidak ditemukan.");
     }
 
+    if (variant.productId !== productId) {
+      throw new Error("Variant tidak sesuai dengan produk yang dipilih.");
+    }
+
     if (variant.stock <= 0) {
       throw new Error("Stock untuk variant ini habis.");
     }
@@ -37,7 +41,7 @@ export class CartService {
   }
 
   async removeFromCart(userId: string, itemId: string) {
-    await cartRepository.removeItemFromCart(itemId);
+    await cartRepository.removeItemFromCart(userId, itemId);
     return await this.getCart(userId);
   }
 
@@ -46,16 +50,20 @@ export class CartService {
       throw new Error("Quantity minimal 1.");
     }
 
-    const existingItem = await cartRepository.getCartItemWithVariant(itemId);
+    const existingItem = await cartRepository.getCartItemWithVariant(itemId, userId);
     if (!existingItem) {
       throw new Error("Item cart tidak ditemukan.");
+    }
+
+    if (existingItem.cart.userId !== userId) {
+      throw new Error("Akses item cart tidak diizinkan.");
     }
 
     if (quantity > existingItem.variant.stock) {
       throw new Error(`Stock tidak cukup. Sisa stock: ${existingItem.variant.stock}.`);
     }
 
-    await cartRepository.updateItemQuantity(itemId, quantity);
+    await cartRepository.updateItemQuantity(userId, itemId, quantity);
     return await this.getCart(userId);
   }
 }

@@ -9,12 +9,13 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   useCallback,
   type ReactNode,
 } from "react";
 import type { SessionUser } from "@/lib/mock-users";
-import { getSession, clearSession, loginUser, patchSession } from "@/lib/auth";
+import { getSessionFromCookie, loginUser, logoutUser } from "@/lib/auth";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -36,8 +37,23 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(() => getSession());
-  const [isLoading] = useState(false);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      const nextUser = await getSessionFromCookie();
+      if (!active) return;
+      setUser(nextUser);
+      setIsLoading(false);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -52,15 +68,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    clearSession();
+    void logoutUser();
     setUser(null);
   }, []);
 
   const updateUser = useCallback((patch: Partial<SessionUser>) => {
-    const next = patchSession(patch);
-    if (next) {
-      setUser(next);
-    }
+    setUser((current) => (current ? { ...current, ...patch } : current));
   }, []);
 
   return (

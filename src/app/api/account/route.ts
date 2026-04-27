@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/backend/prisma/client';
+import { NextResponse } from "next/server";
+import prisma from "@/backend/prisma/client";
 
 function normalizePrice(price: unknown): number {
   const n = Number(price ?? 0);
@@ -7,226 +7,377 @@ function normalizePrice(price: unknown): number {
   return n < 10000 ? n * 1000 : n;
 }
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get('userId');
+function getAuthenticatedUserId(req: Request): string | null {
+  const userId = req.headers.get("x-user-id");
+  if (!userId) return null;
+  return userId.trim() || null;
+}
 
+function ensureString(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+async function buildAccountData(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      addresses: {
+        orderBy: { isPrimary: "desc" },
+      },
+      paymentMethods: {
+        orderBy: { isPrimary: "desc" },
+      },
+      orders: {
+        include: {
+          items: true,
+          address: true,
+        },
+        orderBy: { createdAt: "desc" },
+      },
+      wishlistItems: {
+        include: {
+          product: true,
+        },
+      },
+      notifications: {
+        orderBy: { createdAt: "desc" },
+      },
+      vouchers: {
+        include: {
+          voucher: true,
+        },
+      },
+    },
+  });
+
+  if (!user) return null;
+
+  return {
+    phone: user.phone || "",
+    addresses: user.addresses.map((address) => ({
+      id: address.id,
+      label: address.label,
+      recipient: address.recipient || "",
+      phone: address.phone || "",
+      line1: address.line1,
+      district: address.district || "",
+      city: address.city || "",
+      province: address.province || "",
+      postalCode: address.postalCode || "",
+      latitude: address.latitude ?? undefined,
+      longitude: address.longitude ?? undefined,
+      isPrimary: address.isPrimary,
+    })),
+    paymentMethods: user.paymentMethods.map((paymentMethod) => ({
+      id: paymentMethod.id,
+      label: paymentMethod.label,
+      details: paymentMethod.accountNumber || paymentMethod.accountName || paymentMethod.label,
+      accountNumber: paymentMethod.accountNumber || "",
+      accountName: paymentMethod.accountName || "",
+      isPrimary: paymentMethod.isPrimary,
+    })),
+    orders: user.orders.map((order) => ({
+      id: order.id,
+      createdAt: order.createdAt.toISOString(),
+      status: order.status.toLowerCase(),
+      total: Number(order.totalAmount),
+      shipping: Number(order.shippingFee),
+      items: order.items.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        size: item.size || "",
+        color: item.color || "",
+        quantity: item.quantity,
+        unitPrice: Number(item.price),
+        imageUrl: item.imageUrl || "",
+      })),
+      address: order.address
+        ? {
+            id: order.address.id,
+            label: order.address.label,
+            recipient: order.address.recipient || "",
+            phone: order.address.phone || "",
+            line1: order.address.line1,
+            district: order.address.district || "",
+            city: order.address.city || "",
+            province: order.address.province || "",
+            postalCode: order.address.postalCode || "",
+            isPrimary: order.address.isPrimary,
+          }
+        : undefined,
+    })),
+    wishlist: user.wishlistItems.map((wishlistItem) => ({
+      productId: wishlistItem.productId,
+      name: wishlistItem.product.name,
+      image: wishlistItem.product.images[0] || "",
+      price: Number(wishlistItem.product.price),
+      category: wishlistItem.product.categoryId,
+    })),
+    vouchers: user.vouchers.map((userVoucher) => ({
+      id: userVoucher.voucher.id,
+      code: userVoucher.voucher.code,
+      title: userVoucher.voucher.title,
+      expiresAt: userVoucher.voucher.expiresAt ? userVoucher.voucher.expiresAt.toISOString() : "",
+    })),
+    notifications: user.notifications.map((notification) => ({
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      createdAt: notification.createdAt.toISOString(),
+      isRead: notification.isRead,
+    })),
+  };
+}
+
+export async function GET(req: Request) {
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
-    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        addresses: {
-          orderBy: { isPrimary: 'desc' }
-        },
-        paymentMethods: {
-          orderBy: { isPrimary: 'desc' }
-        },
-        orders: {
-          include: {
-            items: true,
-            address: true
-          },
-          orderBy: { createdAt: 'desc' }
-        },
-        wishlistItems: {
-          include: {
-            product: true
-          }
-        },
-        notifications: {
-          orderBy: { createdAt: 'desc' }
-        },
-        vouchers: {
-          include: {
-            voucher: true
-          }
-        }
-      }
-    }) as any;
-
-    if (!user) {
+    const data = await buildAccountData(userId);
+    if (!data) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Map DB objects to ProfileData format
-    const formattedData = {
-      phone: user.phone || "",
-      addresses: user.addresses.map((a: any) => ({
-        id: a.id,
-        label: a.label,
-        recipient: a.recipient,
-        phone: a.phone || "",
-        line1: a.line1,
-        district: a.district || "",
-        city: a.city,
-        province: a.province,
-        postalCode: a.postalCode || "",
-        latitude: a.latitude || undefined,
-        longitude: a.longitude || undefined,
-        isPrimary: a.isPrimary
-      })),
-      paymentMethods: user.paymentMethods.map((pm: any) => ({
-        id: pm.id,
-        label: pm.label,
-        details: pm.accountNumber || pm.accountName || pm.label,
-        accountNumber: pm.accountNumber || "",
-        accountName: pm.accountName || "",
-        isPrimary: pm.isPrimary
-      })),
-      orders: user.orders.map((o: any) => ({
-        id: o.id,
-        createdAt: o.createdAt.toISOString(),
-        status: o.status.toLowerCase(),
-        total: Number(o.totalAmount),
-        shipping: Number(o.shippingFee),
-        items: o.items.map((item: any) => ({
-          productId: item.productId,
-          name: item.name,
-          size: item.size || "",
-          color: item.color || "",
-          quantity: item.quantity,
-          unitPrice: Number(item.price),
-          imageUrl: item.imageUrl || ""
-        })),
-        address: o.address ? {
-          id: o.address.id,
-          label: o.address.label,
-          recipient: o.address.recipient,
-          phone: o.address.phone || "",
-          line1: o.address.line1,
-          district: o.address.district || "",
-          city: o.address.city,
-          province: o.address.province,
-          postalCode: o.address.postalCode || "",
-          isPrimary: o.address.isPrimary
-        } : undefined
-      })),
-      wishlist: user.wishlistItems.map((w: any) => ({
-        productId: w.productId,
-        name: w.product.name,
-        image: w.product.images[0] || "",
-        price: Number(w.product.price),
-        category: "tees" // Fallback
-      })),
-      vouchers: user.vouchers.map((v: any) => ({
-        id: v.voucher.id,
-        code: v.voucher.code,
-        title: v.voucher.title,
-        expiresAt: v.expiresAt ? v.expiresAt.toISOString() : ""
-      })),
-      notifications: user.notifications.map((n: any) => ({
-        id: n.id,
-        title: n.title,
-        message: n.message,
-        createdAt: n.createdAt.toISOString(),
-        isRead: n.isRead
-      }))
-    };
-
-    return NextResponse.json({ data: formattedData });
-  } catch (err: any) {
+    return NextResponse.json({ data });
+  } catch (err: unknown) {
     console.error("[API] GET /account failed:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { action, userId, ...payload } = body;
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+  try {
+    const body = (await req.json()) as Record<string, unknown>;
+    const action = ensureString(body.action);
+    const payload = body;
 
     switch (action) {
-      case "saveProfileInfo":
+      case "saveProfileInfo": {
         await prisma.user.update({
           where: { id: userId },
           data: {
-            name: payload.name,
-            phone: payload.phone
-          }
+            name: ensureString(payload.name),
+            phone: ensureString(payload.phone) || null,
+          },
         });
         break;
+      }
 
-      case "addAddress":
+      case "addAddress": {
+        const isPrimary = Boolean(payload.isPrimary);
+        if (isPrimary) {
+          await prisma.address.updateMany({
+            where: { userId, isPrimary: true },
+            data: { isPrimary: false },
+          });
+        }
+
         await prisma.address.create({
           data: {
             userId,
-            label: payload.label,
-            recipient: payload.recipient,
-            phone: payload.phone,
-            line1: payload.line1,
-            district: payload.district,
-            city: payload.city,
-            province: payload.province,
-            postalCode: payload.postalCode,
-            latitude: payload.latitude,
-            longitude: payload.longitude,
-            isPrimary: payload.isPrimary || false
-          }
+            label: ensureString(payload.label) || "Rumah",
+            recipient: ensureString(payload.recipient) || null,
+            phone: ensureString(payload.phone) || null,
+            line1: ensureString(payload.line1),
+            district: ensureString(payload.district) || null,
+            city: ensureString(payload.city) || null,
+            province: ensureString(payload.province) || null,
+            postalCode: ensureString(payload.postalCode) || null,
+            latitude: typeof payload.latitude === "number" ? payload.latitude : null,
+            longitude: typeof payload.longitude === "number" ? payload.longitude : null,
+            isPrimary,
+          },
         });
         break;
+      }
 
-      case "updateAddress":
-        await prisma.address.update({
-          where: { id: payload.id },
-          data: payload.payload
+      case "updateAddress": {
+        const addressId = ensureString(payload.id);
+        const patch =
+          payload.payload && typeof payload.payload === "object"
+            ? (payload.payload as Record<string, unknown>)
+            : {};
+
+        const nextIsPrimary = typeof patch.isPrimary === "boolean" ? patch.isPrimary : undefined;
+        if (nextIsPrimary) {
+          await prisma.address.updateMany({
+            where: { userId, isPrimary: true, NOT: { id: addressId } },
+            data: { isPrimary: false },
+          });
+        }
+
+        const result = await prisma.address.updateMany({
+          where: {
+            id: addressId,
+            userId,
+          },
+          data: {
+            label: typeof patch.label === "string" ? patch.label : undefined,
+            recipient: typeof patch.recipient === "string" ? patch.recipient : undefined,
+            phone: typeof patch.phone === "string" ? patch.phone : undefined,
+            line1: typeof patch.line1 === "string" ? patch.line1 : undefined,
+            district: typeof patch.district === "string" ? patch.district : undefined,
+            city: typeof patch.city === "string" ? patch.city : undefined,
+            province: typeof patch.province === "string" ? patch.province : undefined,
+            postalCode: typeof patch.postalCode === "string" ? patch.postalCode : undefined,
+            latitude: typeof patch.latitude === "number" ? patch.latitude : undefined,
+            longitude: typeof patch.longitude === "number" ? patch.longitude : undefined,
+            isPrimary: nextIsPrimary,
+          },
         });
-        break;
 
-      case "removeAddress":
-        await prisma.address.delete({
-          where: { id: payload.id }
+        if (result.count === 0) {
+          return NextResponse.json({ error: "Address not found" }, { status: 404 });
+        }
+        break;
+      }
+
+      case "removeAddress": {
+        const result = await prisma.address.deleteMany({
+          where: {
+            id: ensureString(payload.id),
+            userId,
+          },
         });
+        if (result.count === 0) {
+          return NextResponse.json({ error: "Address not found" }, { status: 404 });
+        }
         break;
+      }
 
-      case "addPaymentMethod":
+      case "addPaymentMethod": {
+        const currentCount = await prisma.paymentMethod.count({ where: { userId } });
+        const isPrimary = currentCount === 0;
+
+        if (isPrimary) {
+          await prisma.paymentMethod.updateMany({
+            where: { userId, isPrimary: true },
+            data: { isPrimary: false },
+          });
+        }
+
         await prisma.paymentMethod.create({
           data: {
             userId,
-            label: payload.label,
-            accountNumber: payload.accountNumber,
-            accountName: payload.accountName,
-            isPrimary: false
+            label: ensureString(payload.label) || "Metode Pembayaran",
+            accountNumber: ensureString(payload.accountNumber) || null,
+            accountName: ensureString(payload.accountName) || null,
+            isPrimary,
+          },
+        });
+        break;
+      }
+
+      case "removePaymentMethod": {
+        const paymentMethodId = ensureString(payload.id);
+        const target = await prisma.paymentMethod.findFirst({
+          where: {
+            id: paymentMethodId,
+            userId,
+          },
+          select: { id: true, isPrimary: true },
+        });
+
+        if (!target) {
+          return NextResponse.json({ error: "Payment method not found" }, { status: 404 });
+        }
+
+        await prisma.paymentMethod.delete({ where: { id: paymentMethodId } });
+
+        if (target.isPrimary) {
+          const replacement = await prisma.paymentMethod.findFirst({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            select: { id: true },
+          });
+          if (replacement) {
+            await prisma.paymentMethod.update({
+              where: { id: replacement.id },
+              data: { isPrimary: true },
+            });
           }
-        });
+        }
         break;
+      }
 
-      case "removePaymentMethod":
-        await prisma.paymentMethod.delete({
-          where: { id: payload.id }
-        });
-        break;
+      case "toggleWishlistItem": {
+        const item =
+          payload.item && typeof payload.item === "object"
+            ? (payload.item as Record<string, unknown>)
+            : null;
+        const productId = ensureString(item?.productId);
+        if (!productId) {
+          return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
+        }
 
-      case "toggleWishlistItem":
         const existing = await prisma.wishlistItem.findFirst({
-          where: { userId, productId: payload.item.productId }
+          where: { userId, productId },
         });
+
         if (existing) {
           await prisma.wishlistItem.delete({ where: { id: existing.id } });
         } else {
           await prisma.wishlistItem.create({
-            data: { userId, productId: payload.item.productId }
+            data: { userId, productId },
           });
         }
         break;
+      }
 
-      case "markNotificationRead":
-        await prisma.notification.update({
-          where: { id: payload.id },
-          data: { isRead: true }
+      case "removeWishlistItem": {
+        await prisma.wishlistItem.deleteMany({
+          where: {
+            userId,
+            productId: ensureString(payload.productId),
+          },
         });
         break;
+      }
 
-      case "createOrder":
+      case "markNotificationRead": {
+        const result = await prisma.notification.updateMany({
+          where: {
+            id: ensureString(payload.id),
+            userId,
+          },
+          data: { isRead: true },
+        });
+        if (result.count === 0) {
+          return NextResponse.json({ error: "Notification not found" }, { status: 404 });
+        }
+        break;
+      }
+
+      case "createOrder": {
         await prisma.$transaction(async (tx) => {
           const items = Array.isArray(payload.items) ? payload.items : [];
           if (items.length === 0) {
             throw new Error("Item checkout kosong.");
+          }
+
+          const paymentMethodId = ensureString(payload.paymentMethodId);
+          if (!paymentMethodId) {
+            throw new Error("Metode pembayaran wajib dipilih.");
+          }
+
+          const paymentMethod = await tx.paymentMethod.findFirst({
+            where: {
+              id: paymentMethodId,
+              userId,
+            },
+          });
+
+          if (!paymentMethod) {
+            throw new Error("Metode pembayaran tidak ditemukan.");
           }
 
           const totalAmount = normalizePrice(payload.total);
@@ -236,6 +387,45 @@ export async function POST(req: Request) {
             throw new Error("Total checkout tidak valid.");
           }
 
+          const promoCode = ensureString(payload.promoCode).toUpperCase();
+          if (promoCode) {
+            const voucher = await tx.voucher.findFirst({
+              where: {
+                code: promoCode,
+                isActive: true,
+              },
+            });
+
+            if (!voucher) {
+              throw new Error("Voucher tidak ditemukan atau tidak aktif.");
+            }
+
+            const now = new Date();
+            if ((voucher.startsAt && voucher.startsAt > now) || (voucher.expiresAt && voucher.expiresAt < now)) {
+              throw new Error("Voucher sudah tidak berlaku.");
+            }
+
+            const userVoucher = await tx.userVoucher.findFirst({
+              where: {
+                userId,
+                voucherId: voucher.id,
+              },
+            });
+
+            if (!userVoucher) {
+              throw new Error("Voucher belum dimiliki akun ini.");
+            }
+
+            if (userVoucher.redeemedAt) {
+              throw new Error("Voucher sudah pernah digunakan.");
+            }
+
+            await tx.userVoucher.update({
+              where: { id: userVoucher.id },
+              data: { redeemedAt: now },
+            });
+          }
+
           const variantUpdates: Array<{
             variantId: string;
             productId: string;
@@ -243,7 +433,7 @@ export async function POST(req: Request) {
             quantity: number;
           }> = [];
 
-          const orderItems = [] as Array<{
+          const orderItems: Array<{
             productId: string;
             name: string;
             quantity: number;
@@ -251,53 +441,59 @@ export async function POST(req: Request) {
             size: string;
             color: string;
             imageUrl: string;
-          }>;
+          }> = [];
 
           for (const rawItem of items) {
-            const item = rawItem as any;
-            const productId = String(item.productId || item.product?.id || "");
-            const variantId = String(item.productVariantId || item.variant?.id || "");
+            const item = rawItem as Record<string, unknown>;
+            const product = item.product && typeof item.product === "object" ? (item.product as Record<string, unknown>) : {};
+            const variant = item.variant && typeof item.variant === "object" ? (item.variant as Record<string, unknown>) : {};
+
+            const productId = ensureString(item.productId || product.id);
+            const variantId = ensureString(item.productVariantId || variant.id);
             const quantity = Number(item.quantity || 0);
 
             if (!productId || !variantId || quantity <= 0) {
               throw new Error("Data item checkout tidak valid.");
             }
 
-            const variant = await tx.productVariant.findUnique({
+            const dbVariant = await tx.productVariant.findUnique({
               where: { id: variantId },
               include: { product: true },
             });
 
-            if (!variant || variant.productId !== productId) {
+            if (!dbVariant || dbVariant.productId !== productId) {
               throw new Error("Variant produk tidak ditemukan atau tidak cocok.");
             }
 
-            if (variant.stock < quantity) {
-              throw new Error(`Stok ${variant.size} tidak cukup. Sisa: ${variant.stock}.`);
+            if (dbVariant.stock < quantity) {
+              throw new Error(`Stok ${dbVariant.size} tidak cukup. Sisa: ${dbVariant.stock}.`);
             }
 
-            const unitPrice = normalizePrice(item.product?.price ?? item.price ?? variant.product.price);
+            const unitPrice = normalizePrice(product.price ?? item.price ?? dbVariant.product.price);
             if (unitPrice <= 0) {
-              throw new Error(`Harga item ${variant.product.name} tidak valid.`);
+              throw new Error(`Harga item ${dbVariant.product.name} tidak valid.`);
             }
 
             orderItems.push({
               productId,
-              name: item.product?.name || item.name || variant.product.name,
+              name: ensureString(product.name || item.name) || dbVariant.product.name,
               quantity,
               price: unitPrice,
-              size: item.variant?.size || item.size || variant.size,
-              color: item.variant?.color || item.color || variant.color || "",
-              imageUrl: item.product?.imageUrl || item.imageUrl || item.image || variant.product.images?.[0] || "",
+              size: ensureString(variant.size || item.size) || dbVariant.size,
+              color: ensureString(variant.color || item.color) || dbVariant.color || "",
+              imageUrl: ensureString(product.imageUrl || item.imageUrl || item.image) || dbVariant.product.images?.[0] || "",
             });
 
             variantUpdates.push({
               variantId,
               productId,
-              size: variant.size,
+              size: dbVariant.size,
               quantity,
             });
           }
+
+          const notesPart = ensureString(payload.notes);
+          const notes = [notesPart, `Payment: ${paymentMethod.label}`].filter(Boolean).join(" | ");
 
           const createdOrder = await tx.order.create({
             data: {
@@ -305,10 +501,10 @@ export async function POST(req: Request) {
               status: "AWAITING_PAYMENT",
               totalAmount,
               shippingFee,
-              addressId: payload.addressId,
-              courier: payload.courier || "JNE Regular",
-              notes: payload.notes || null,
-              promoCode: payload.promoCode || null,
+              addressId: ensureString(payload.addressId) || null,
+              courier: ensureString(payload.courier) || "JNE Regular",
+              notes: notes || null,
+              promoCode: promoCode || null,
               items: {
                 create: orderItems,
               },
@@ -334,28 +530,17 @@ export async function POST(req: Request) {
           }
 
           for (const [productId, sizeRows] of groupedByProduct.entries()) {
-            const product = await tx.product.findUnique({ where: { id: productId } });
-            if (!product) continue;
+            const nextTotalStock = await tx.productVariant.aggregate({
+              where: { productId },
+              _sum: { stock: true },
+            });
 
-            const productRecord = product as any;
-            const sizeOptions = Array.isArray(productRecord.sizeOptions) ? productRecord.sizeOptions : [];
-            const currentSizeStocks = Array.isArray(productRecord.sizeStocks) ? productRecord.sizeStocks : [];
-
-            const nextSizeStocks = [...currentSizeStocks];
-            for (const row of sizeRows) {
-              const idx = sizeOptions.findIndex((s: string) => s === row.size);
-              if (idx >= 0) {
-                nextSizeStocks[idx] = Math.max(0, (nextSizeStocks[idx] ?? 0) - row.quantity);
-              }
-            }
-
-            const nextTotalStock = Math.max(0, nextSizeStocks.reduce((sum, n) => sum + (n || 0), 0));
+            const safeStock = Math.max(0, nextTotalStock._sum.stock ?? 0);
             await tx.product.update({
               where: { id: productId },
               data: {
-                sizeStocks: nextSizeStocks,
-                stock: nextTotalStock,
-                inStock: nextTotalStock > 0,
+                stock: safeStock,
+                inStock: safeStock > 0,
               },
             });
           }
@@ -365,20 +550,31 @@ export async function POST(req: Request) {
             await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
           }
 
-          return createdOrder;
+          await tx.notification.create({
+            data: {
+              userId,
+              type: "ORDER",
+              title: "Pesanan Berhasil Dibuat",
+              message: `Pesanan ${createdOrder.id} menunggu pembayaran.`,
+            },
+          });
         });
         break;
+      }
 
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    // After any mutation, return the full updated data
-    const updatedRes = await fetch(`${new URL(req.url).origin}/api/account?userId=${userId}`);
-    const updatedPayload = await updatedRes.json();
-    return NextResponse.json(updatedPayload, { status: updatedRes.status });
-  } catch (err: any) {
+    const updatedData = await buildAccountData(userId);
+    if (!updatedData) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ data: updatedData });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal Server Error";
     console.error("[API] POST /account failed:", err);
-    return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

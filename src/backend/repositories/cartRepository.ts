@@ -70,26 +70,58 @@ export class CartRepository {
     });
   }
 
-  async getCartItemWithVariant(itemId: string) {
-    return await prisma.cartItem.findUnique({
-      where: { id: itemId },
+  async getCartItemWithVariant(itemId: string, userId: string) {
+    return await prisma.cartItem.findFirst({
+      where: {
+        id: itemId,
+        cart: {
+          userId,
+        },
+      },
       include: {
+        cart: {
+          select: {
+            userId: true,
+          },
+        },
         variant: true,
       },
     });
   }
 
-  async removeItemFromCart(itemId: string) {
-    return await prisma.cartItem.delete({
-      where: { id: itemId },
+  async removeItemFromCart(userId: string, itemId: string) {
+    const result = await prisma.cartItem.deleteMany({
+      where: {
+        id: itemId,
+        cart: {
+          userId,
+        },
+      },
     });
+
+    if (result.count === 0) {
+      throw new Error("Item cart tidak ditemukan.");
+    }
+
+    return result;
   }
 
-  async updateItemQuantity(itemId: string, quantity: number) {
-    return await prisma.cartItem.update({
-      where: { id: itemId },
+  async updateItemQuantity(userId: string, itemId: string, quantity: number) {
+    const result = await prisma.cartItem.updateMany({
+      where: {
+        id: itemId,
+        cart: {
+          userId,
+        },
+      },
       data: { quantity },
     });
+
+    if (result.count === 0) {
+      throw new Error("Item cart tidak ditemukan.");
+    }
+
+    return result;
   }
 }
 

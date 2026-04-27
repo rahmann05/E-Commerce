@@ -14,8 +14,6 @@ import { fetchProvinces, fetchRegencies, fetchDistricts } from "@/lib/api/geogra
 import dynamic from "next/dynamic";
 const LocationMap = dynamic(() => import("@/components/checkout/LocationMap"), { ssr: false });
 
-import "./profile.css";
-
 export function ProfileAddressView({
   addresses,
   onSaveAddress,
@@ -188,22 +186,21 @@ export function ProfileAddressView({
 
   return (
     <section>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <p className="profile-section-title" style={{ margin: 0 }}>Alamat Pengiriman</p>
+      <div className="pv-section-header">
+        <p className="profile-section-title pv-title-inline">Alamat Pengiriman</p>
         <button 
-          className="pill-btn" 
-          style={{ background: "#111", color: "#fff", border: "none" }}
+          className="pill-btn pv-btn-primary"
           onClick={() => setShowForm(!showForm)}
         >
           {showForm ? "Batal" : "Tambah Alamat Baru"}
         </button>
       </div>
 
-      <div style={{ maxWidth: "800px" }}>
+      <div className="pv-content-800">
         {showForm && (
-          <div style={{ background: "#f9f9f9", padding: "1.5rem", borderRadius: "12px", marginBottom: "2rem", border: "1px solid #eee" }}>
+          <div className="pv-form-panel">
             
-            <div style={{ marginBottom: "1.5rem" }}>
+            <div className="pv-mb-24">
               <LocationMap 
                 onLocationSelect={handleLocationSelect} 
                 centerLat={formData.latitude} 
@@ -211,7 +208,7 @@ export function ProfileAddressView({
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+            <div className="pv-grid-2">
               <div className="auth-input-wrapper">
                 <label htmlFor="address-recipient" className="auth-input-label">Nama Penerima</label>
                 <input id="address-recipient" className="auth-input" value={formData.recipient} onChange={e => setFormData({...formData, recipient: e.target.value})} placeholder="Contoh: Alex Doe" />
@@ -222,7 +219,7 @@ export function ProfileAddressView({
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+            <div className="pv-grid-2">
               <div className="auth-input-wrapper">
                 <label htmlFor="address-province" className="auth-input-label">Provinsi</label>
                 <input 
@@ -251,7 +248,7 @@ export function ProfileAddressView({
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+            <div className="pv-grid-2">
               <div className="auth-input-wrapper">
                 <label htmlFor="address-district" className="auth-input-label">Kecamatan</label>
                 <input 
@@ -271,16 +268,15 @@ export function ProfileAddressView({
               </div>
             </div>
 
-            <div className="auth-input-wrapper" style={{ marginBottom: "1rem" }}>
+            <div className="auth-input-wrapper pv-mb-16">
               <label htmlFor="address-line1" className="auth-input-label">Alamat Lengkap (Nama Jalan, No. Rumah, dll)</label>
               <textarea id="address-line1" className="auth-input" rows={2} value={formData.line1} onChange={e => setFormData({...formData, line1: e.target.value})} placeholder="Jl. Merdeka No. 123" />
             </div>
 
-            <div style={{ display: "flex", gap: "0.8rem" }}>
+            <div className="pv-row-actions">
               <button
                 type="button"
-                className="pill-btn"
-                style={{ background: "#111", color: "#fff", border: "none", flex: 1 }}
+                className="pill-btn pv-btn-primary pv-flex-1"
                 onClick={async () => {
                   if (!formData.recipient || !formData.line1) return;
                   await onSaveAddress(formData);
@@ -298,23 +294,14 @@ export function ProfileAddressView({
           {addresses.map((item) => (
             <div
               key={item.id}
-              style={{
-                padding: "1.2rem",
-                borderRadius: "12px",
-                border: "1px solid #eee",
-                marginBottom: "1rem",
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "1rem",
-                position: "relative"
-              }}
+              className="pv-item-card"
             >
-              <div style={{ fontSize: "0.85rem", color: "#444", lineHeight: 1.6 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                  <span style={{ fontWeight: 700, color: "#111", fontSize: "0.95rem" }}>{item.recipient}</span>
-                  <span style={{ height: "4px", width: "4px", borderRadius: "50%", background: "#ccc" }}></span>
+              <div className="pv-item-meta">
+                <div className="pv-item-head">
+                  <span className="pv-item-name">{item.recipient}</span>
+                  <span className="pv-item-dot"></span>
                   <span>{item.phone}</span>
-                  {item.isPrimary && <span style={{ fontSize: "0.65rem", background: "#fef3c7", color: "#92400e", padding: "0.1rem 0.4rem", borderRadius: "4px", fontWeight: 700 }}>UTAMA</span>}
+                  {item.isPrimary && <span className="pv-badge-address-primary">UTAMA</span>}
                 </div>
                 <div>{item.line1}</div>
                 <div>{item.district}, {item.city}</div>
@@ -322,8 +309,7 @@ export function ProfileAddressView({
               </div>
               <button
                 type="button"
-                className="pill-btn"
-                style={{ height: "fit-content", fontSize: "0.72rem" }}
+                className="pill-btn pv-btn-xs"
                 onClick={() => onRemoveAddress(item.id)}
               >
                 Hapus
@@ -331,7 +317,7 @@ export function ProfileAddressView({
             </div>
           ))}
           {addresses.length === 0 && !showForm && (
-            <div style={{ textAlign: "center", padding: "3rem", color: "#999" }}>Belum ada alamat pengiriman.</div>
+            <div className="pv-empty-line">Belum ada alamat pengiriman.</div>
           )}
         </div>
       </div>
@@ -357,20 +343,19 @@ export function ProfilePaymentView({
 
   return (
     <section>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <p className="profile-section-title" style={{ margin: 0 }}>Metode Pembayaran</p>
+      <div className="pv-section-header">
+        <p className="profile-section-title pv-title-inline">Metode Pembayaran</p>
         <button 
-          className="pill-btn" 
-          style={{ background: "#111", color: "#fff", border: "none" }}
+          className="pill-btn pv-btn-primary"
           onClick={() => setShowForm(!showForm)}
         >
           {showForm ? "Batal" : "Tambah Rekening"}
         </button>
       </div>
 
-      <div style={{ maxWidth: "600px" }}>
+      <div className="pv-content-600">
         {showForm && (
-          <div style={{ background: "#f9f9f9", padding: "1.5rem", borderRadius: "12px", marginBottom: "2rem", border: "1px solid #eee" }}>
+          <div className="pv-form-panel">
             <div className="auth-input-wrapper">
               <label htmlFor="payment-bank" className="auth-input-label">Pilih Bank</label>
               <select id="payment-bank" className="auth-input" value={formData.label} onChange={e => setFormData({...formData, label: e.target.value})}>
@@ -395,8 +380,7 @@ export function ProfilePaymentView({
 
             <button
               type="button"
-              className="pill-btn"
-              style={{ marginTop: "1rem", background: "#111", color: "#fff", border: "none", width: "100%" }}
+              className="pill-btn pv-btn-primary pv-btn-block pv-mt-16"
               onClick={async () => {
                 if (!formData.accountNumber || !formData.accountName) return;
                 await onSavePayment(formData);
@@ -413,27 +397,18 @@ export function ProfilePaymentView({
           {paymentMethods.map((method) => (
             <div
               key={method.id}
-              style={{
-                padding: "1.2rem",
-                borderRadius: "12px",
-                border: "1px solid #eee",
-                marginBottom: "1rem",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
+              className="pv-item-card pv-item-card-center"
             >
-              <div style={{ fontSize: "0.85rem", color: "#444" }}>
-                <div style={{ fontWeight: 700, color: "#111", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  {method.label} {method.isPrimary && <span style={{ fontSize: "0.6rem", background: "#d1fae5", color: "#065f46", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>UTAMA</span>}
+              <div className="pv-payment-meta">
+                <div className="pv-payment-head">
+                  {method.label} {method.isPrimary && <span className="pv-badge-payment-primary">UTAMA</span>}
                 </div>
-                <div style={{ fontSize: "0.9rem", color: "#111", marginTop: "0.2rem" }}>{method.accountNumber}</div>
-                <div style={{ fontSize: "0.78rem", color: "#777" }}>an. {method.accountName}</div>
+                <div className="pv-payment-number">{method.accountNumber}</div>
+                <div className="pv-payment-owner">an. {method.accountName}</div>
               </div>
               <button
                 type="button"
-                className="pill-btn"
-                style={{ fontSize: "0.72rem" }}
+                className="pill-btn pv-btn-xs"
                 onClick={() => onRemovePayment(method.id)}
               >
                 Hapus
@@ -441,7 +416,7 @@ export function ProfilePaymentView({
             </div>
           ))}
           {paymentMethods.length === 0 && !showForm && (
-            <div style={{ textAlign: "center", padding: "3rem", color: "#999" }}>Belum ada metode pembayaran.</div>
+            <div className="pv-empty-line">Belum ada metode pembayaran.</div>
           )}
         </div>
       </div>
@@ -482,7 +457,7 @@ export function ProfileSecurityView({
   return (
     <section>
       <p className="profile-section-title">Ubah Password</p>
-      <form onSubmit={handleSave} style={{ maxWidth: "400px" }}>
+      <form onSubmit={handleSave} className="pv-content-400">
         <div className="auth-input-wrapper">
           <label htmlFor="security-current-password" className="auth-input-label">Password Saat Ini</label>
           <input
@@ -523,13 +498,12 @@ export function ProfileSecurityView({
         </div>
         <button 
           type="submit"
-          className="pill-btn"
-          style={{ marginTop: "1rem", background: "#111", color: "#fff", border: "none" }}
+          className="pill-btn pv-btn-primary pv-mt-16"
         >
           Perbarui Password
         </button>
         {message && (
-          <p style={{ marginTop: "0.8rem", fontSize: "0.8rem", color: "#666" }}>
+          <p className="pv-help-text">
             {message}
           </p>
         )}
@@ -557,21 +531,15 @@ export function ProfileWishlistView({
   return (
     <section>
       <p className="profile-section-title">Daftar Keinginan</p>
-      <div style={{ maxWidth: "640px" }}>
+      <div className="pv-content-640">
         {items.map((item) => (
           <div
             key={item.productId}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "1rem 0",
-              borderBottom: "1px solid rgba(0,0,0,0.08)",
-            }}
+            className="pv-line-row"
           >
             <div>
-              <div style={{ fontSize: "0.92rem", fontWeight: 700 }}>{item.name}</div>
-              <div style={{ fontSize: "0.78rem", color: "#777" }}>
+              <div className="pv-line-title">{item.name}</div>
+              <div className="pv-line-subtitle">
                 {item.category} · Rp{item.price}
               </div>
             </div>
@@ -600,10 +568,10 @@ export function ProfileVoucherView({ vouchers }: { vouchers: ProfileVoucher[] })
       {vouchers.map((voucher) => (
         <div
           key={voucher.id}
-          style={{ maxWidth: "620px", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "1rem 0" }}
+          className="pv-note-line"
         >
-          <div style={{ fontSize: "0.9rem", fontWeight: 700 }}>{voucher.title}</div>
-          <div style={{ fontSize: "0.78rem", color: "#666" }}>
+          <div className="pv-note-title">{voucher.title}</div>
+          <div className="pv-note-subtitle">
             {voucher.code} · Berlaku sampai {voucher.expiresAt}
           </div>
         </div>
@@ -633,12 +601,12 @@ export function ProfileNotificationView({
       {notifications.map((notification) => (
         <div
           key={notification.id}
-          style={{ maxWidth: "620px", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "1rem 0" }}
+          className="pv-note-line"
         >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+          <div className="pv-note-row">
             <div>
-              <div style={{ fontSize: "0.9rem", fontWeight: 700 }}>{notification.title}</div>
-              <div style={{ fontSize: "0.78rem", color: "#666" }}>{notification.message}</div>
+              <div className="pv-note-title">{notification.title}</div>
+              <div className="pv-note-subtitle">{notification.message}</div>
             </div>
             {!notification.isRead && (
               <button type="button" className="pill-btn" onClick={() => onMarkRead(notification.id)}>
@@ -656,15 +624,8 @@ export function ProfileEmptyView({ title, message }: { title: string; message: s
   return (
     <section>
       <p className="profile-section-title">{title}</p>
-      <div 
-        style={{ 
-          padding: "4rem 2rem", 
-          textAlign: "center", 
-          background: "transparent", 
-          borderBottom: "1px solid rgba(0,0,0,0.1)"
-        }}
-      >
-        <p style={{ fontSize: "0.95rem", color: "#888", fontWeight: 500 }}>{message}</p>
+      <div className="pv-empty-block">
+        <p className="pv-empty-message">{message}</p>
       </div>
     </section>
   );

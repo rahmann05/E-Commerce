@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
+import prisma from "@/backend/prisma/client";
+
+function getAuthenticatedUserId(request: Request): string | null {
+  const userId = request.headers.get("x-user-id");
+  if (!userId) return null;
+  return userId.trim() || null;
+}
 
 export async function GET(request: Request) {
+  const userId = getAuthenticatedUserId(request);
+  if (!userId) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const orderId = searchParams.get("orderId");
 
@@ -10,6 +22,18 @@ export async function GET(request: Request) {
   }
 
   try {
+    const order = await prisma.order.findUnique({
+      where: {
+        id: orderId,
+        userId,
+      },
+      select: { id: true },
+    });
+
+    if (!order) {
+      return NextResponse.json({ success: false, error: "Order tidak ditemukan" }, { status: 404 });
+    }
+
     const isProduction = process.env.MIDTRANS_IS_PRODUCTION === "true";
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
 

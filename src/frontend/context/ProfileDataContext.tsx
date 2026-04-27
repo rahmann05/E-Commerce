@@ -153,7 +153,7 @@ export function ProfileDataProvider({ children }: { children: ReactNode }) {
       setData(EMPTY_DATA);
       return;
     }
-    const res = await fetch(`/api/account?userId=${encodeURIComponent(user.id)}`);
+    const res = await fetch("/api/account");
     if (!res.ok) return;
     const payload = (await res.json()) as { data: UserProfileData };
     if (payload.data) {
@@ -174,7 +174,7 @@ export function ProfileDataProvider({ children }: { children: ReactNode }) {
       const res = await fetch("/api/account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, userId: user.id, ...body }),
+        body: JSON.stringify({ action, ...body }),
       });
       if (!res.ok) return null;
       const payload = (await res.json()) as { data: UserProfileData };

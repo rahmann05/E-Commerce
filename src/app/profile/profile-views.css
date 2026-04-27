@@ -1,0 +1,242 @@
+/* ===================================================
+   PROFILE VIEWS UTILITIES
+   =================================================== */
+
+.pv-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.pv-title-inline {
+  margin: 0;
+}
+
+.pv-btn-primary {
+  background: #111;
+  color: #fff;
+  border: none;
+}
+
+.pv-btn-block {
+  width: 100%;
+}
+
+.pv-btn-xs {
+  font-size: 0.72rem;
+  height: fit-content;
+}
+
+.pv-content-800 {
+  max-width: 800px;
+}
+
+.pv-content-640 {
+  max-width: 640px;
+}
+
+.pv-content-600 {
+  max-width: 600px;
+}
+
+.pv-content-400 {
+  max-width: 400px;
+}
+
+.pv-form-panel {
+  background: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid #eee;
+}
+
+.pv-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pv-mb-24 {
+  margin-bottom: 1.5rem;
+}
+
+.pv-mb-16 {
+  margin-bottom: 1rem;
+}
+
+.pv-mt-16 {
+  margin-top: 1rem;
+}
+
+.pv-row-actions {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.pv-flex-1 {
+  flex: 1;
+}
+
+.pv-item-card {
+  padding: 1.2rem;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pv-item-card-center {
+  align-items: center;
+}
+
+.pv-item-meta {
+  font-size: 0.85rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+.pv-item-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pv-item-name {
+  font-weight: 700;
+  color: #111;
+  font-size: 0.95rem;
+}
+
+.pv-item-dot {
+  height: 4px;
+  width: 4px;
+  border-radius: 50%;
+  background: #ccc;
+}
+
+.pv-badge-address-primary {
+  font-size: 0.65rem;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.pv-badge-payment-primary {
+  font-size: 0.6rem;
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.pv-payment-meta {
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.pv-payment-head {
+  font-weight: 700;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pv-payment-number {
+  font-size: 0.9rem;
+  color: #111;
+  margin-top: 0.2rem;
+}
+
+.pv-payment-owner {
+  font-size: 0.78rem;
+  color: #777;
+}
+
+.pv-line-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pv-line-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.pv-line-subtitle {
+  font-size: 0.78rem;
+  color: #777;
+}
+
+.pv-note-line {
+  max-width: 620px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 1rem 0;
+}
+
+.pv-note-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pv-note-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pv-note-subtitle {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.pv-empty-line {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+}
+
+.pv-help-text {
+  margin-top: 0.8rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.pv-empty-block {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: transparent;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pv-empty-message {
+  font-size: 0.95rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.pv-loading-wrap {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #eee;
+  border-top-color: #111;
+  border-radius: 50%;
+}

@@ -60,25 +60,15 @@ export default function ProfilePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
-  const [isMounted, setIsMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>(() => toTab(searchParams.get("tab")));
 
-  // Sync tab with URL on mount
   useEffect(() => {
-    setIsMounted(true);
-    const tab = toTab(searchParams.get("tab"));
-    if (tab !== "overview") {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
-
-  // If not loading and no user, redirect to login
-  useEffect(() => {
-    if (isMounted && !isLoading && !user) {
+    if (!isLoading && !user) {
       router.replace("/login");
     }
-  }, [user, isLoading, router, isMounted]);
-  if (!user || !isMounted) return null;
+  }, [isLoading, user, router]);
+
+  if (!user) return null;
 
   const handleSaveProfile = (payload: { name: string; phone: string }) => {
     updateUser({ name: payload.name, phone: payload.phone });
@@ -157,10 +147,10 @@ export default function ProfilePage() {
   };
 
   // While checking auth state or before mounting, don't flash the UI
-  if (!isMounted || isLoading || !user) {
+  if (isLoading || !user) {
     return (
-      <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="animate-spin" style={{ width: "40px", height: "40px", border: "3px solid #eee", borderTopColor: "#111", borderRadius: "50%" }}></div>
+      <div className="pv-loading-wrap">
+        <div className="animate-spin pv-loading-spinner"></div>
       </div>
     );
   }

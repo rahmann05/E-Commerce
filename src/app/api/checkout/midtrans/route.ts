@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
 import prisma from "@/backend/prisma/client";
 
+function getAuthenticatedUserId(request: Request): string | null {
+  const userId = request.headers.get("x-user-id");
+  if (!userId) return null;
+  return userId.trim() || null;
+}
+
 function toNumber(value: unknown): number {
   const n = Number(value ?? 0);
   if (!Number.isFinite(n)) return 0;
@@ -9,6 +15,11 @@ function toNumber(value: unknown): number {
 }
 
 export async function POST(request: Request) {
+  const userId = getAuthenticatedUserId(request);
+  if (!userId) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { order_id, customer_details, payment_type, bank } = body;
@@ -18,7 +29,10 @@ export async function POST(request: Request) {
     }
 
     const order = await prisma.order.findUnique({
-      where: { id: String(order_id) },
+      where: {
+        id: String(order_id),
+        userId,
+      },
       include: {
         items: true,
         user: true,
