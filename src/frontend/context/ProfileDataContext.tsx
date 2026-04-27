@@ -99,7 +99,7 @@ interface ProfileDataContextValue {
   wishlist: WishlistItem[];
   vouchers: ProfileVoucher[];
   notifications: ProfileNotification[];
-  saveProfileInfo: (payload: { name: string; phone: string }) => void;
+  saveProfileInfo: (payload: { name: string; phone: string }) => Promise<{ success: boolean; message?: string }>;
   addAddress: (payload: Omit<ProfileAddress, "id" | "isPrimary">) => Promise<{ success: boolean; address?: ProfileAddress; message?: string }>;
   updateAddress: (id: string, payload: Partial<Omit<ProfileAddress, "id">>) => Promise<{ success: boolean; message?: string }>;
   removeAddress: (id: string) => Promise<{ success: boolean; message?: string }>;
@@ -185,10 +185,11 @@ export function ProfileDataProvider({ children }: { children: ReactNode }) {
   );
 
   const saveProfileInfo = useCallback(
-    ({ name, phone }: { name: string; phone: string }) => {
-      if (!user) return;
+    async ({ name, phone }: { name: string; phone: string }) => {
+      if (!user) return { success: false, message: "User belum login." };
       updateUser({ name, phone });
-      void callMutation("saveProfileInfo", { name, phone });
+      const res = await callMutation("saveProfileInfo", { name, phone });
+      return { success: !!res, message: res ? "Profil berhasil diperbarui." : "Gagal menyimpan ke server." };
     },
     [user, updateUser, callMutation]
   );

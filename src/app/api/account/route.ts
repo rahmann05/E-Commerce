@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import prisma from "@/backend/prisma/client";
 
 function normalizePrice(price: unknown): number {
@@ -7,12 +8,9 @@ function normalizePrice(price: unknown): number {
   return n < 10000 ? n * 1000 : n;
 }
 
-function getAuthenticatedUserId(req: Request): string | null {
-  // In Next.js App Router, we can get cookies from the request object headers
-  // or use the specialized NextRequest if we cast it.
-  const cookieHeader = req.headers.get("cookie") || "";
-  const match = cookieHeader.match(/novure_uid=([^;]+)/);
-  const userId = match ? match[1] : null;
+async function getAuthenticatedUserId(_req?: Request): Promise<string | null> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("novure_uid")?.value;
   return userId?.trim() || null;
 }
 
@@ -97,17 +95,17 @@ async function buildAccountData(userId: string) {
       })),
       address: order.address
         ? {
-            id: order.address.id,
-            label: order.address.label,
-            recipient: order.address.recipient || "",
-            phone: order.address.phone || "",
-            line1: order.address.line1,
-            district: order.address.district || "",
-            city: order.address.city || "",
-            province: order.address.province || "",
-            postalCode: order.address.postalCode || "",
-            isPrimary: order.address.isPrimary,
-          }
+          id: order.address.id,
+          label: order.address.label,
+          recipient: order.address.recipient || "",
+          phone: order.address.phone || "",
+          line1: order.address.line1,
+          district: order.address.district || "",
+          city: order.address.city || "",
+          province: order.address.province || "",
+          postalCode: order.address.postalCode || "",
+          isPrimary: order.address.isPrimary,
+        }
         : undefined,
     })),
     wishlist: user.wishlistItems.map((wishlistItem) => ({
@@ -134,8 +132,9 @@ async function buildAccountData(userId: string) {
 }
 
 export async function GET(req: Request) {
-  const userId = getAuthenticatedUserId(req);
+  const userId = await getAuthenticatedUserId(req);
   if (!userId) {
+    console.error("[API] GET /account: No userId found in cookies");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -153,8 +152,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const userId = getAuthenticatedUserId(req);
+  const userId = await getAuthenticatedUserId(req);
   if (!userId) {
+    console.error("[API] POST /account: No userId found in cookies");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -176,7 +176,10 @@ export async function POST(req: Request) {
       }
 
       case "addAddress": {
-        const isPrimary = Boolean(payload.isPrimary);
+        console.log("[API] Action: addAddress for user", userId);
+        const currentCount = await prisma.address.count({ where: { userId } });
+        const isPrimary = payload.isPrimary === true || currentCount === 0;
+        
         if (isPrimary) {
           await prisma.address.updateMany({
             where: { userId, isPrimary: true },
@@ -258,6 +261,7 @@ export async function POST(req: Request) {
       }
 
       case "addPaymentMethod": {
+        console.log("[API] Action: addPaymentMethod for user", userId);
         const currentCount = await prisma.paymentMethod.count({ where: { userId } });
         const isPrimary = currentCount === 0;
 
@@ -372,12 +376,27 @@ export async function POST(req: Request) {
             throw new Error("Metode pembayaran wajib dipilih.");
           }
 
-          const paymentMethod = await tx.paymentMethod.findFirst({
+          let paymentMethod = await tx.paymentMethod.findFirst({
             where: {
               id: paymentMethodId,
               userId,
             },
           });
+
+          // Support for "Standard"/Ad-hoc payment methods (prefixed with std_)
+          if (!paymentMethod && paymentMethodId.startsWith("std_")) {
+            const label = paymentMethodId.replace("std_", "").toUpperCase();
+            paymentMethod = {
+              id: paymentMethodId,
+              userId,
+              label: label === "VA_OTHER" ? "Virtual Account (Lainnya)" : label,
+              accountNumber: "",
+              accountName: "",
+              isPrimary: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            } as any;
+          }
 
           if (!paymentMethod) {
             throw new Error("Metode pembayaran tidak ditemukan.");

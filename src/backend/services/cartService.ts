@@ -66,6 +66,11 @@ export class CartService {
     await cartRepository.updateItemQuantity(userId, itemId, quantity);
     return await this.getCart(userId);
   }
+
+  async clearCart(userId: string) {
+    await cartRepository.clearCart(userId);
+    return await this.getCart(userId);
+  }
 }
 
 export const cartService = new CartService();

@@ -7,9 +7,14 @@
 
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useProfileData } from "@/context/ProfileDataContext";
 
 export default function ProfileInfoCard() {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
+  const { saveProfileInfo } = useProfileData();
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
   if (!user) return null;
 
   const fullName = user.name || "";
@@ -19,10 +24,23 @@ export default function ProfileInfoCard() {
     phone: user.phone || "",
   });
 
-  const handleSave = (e: FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
+    setMessage(null);
     const newFullName = `${formData.firstName} ${formData.lastName}`.trim();
-    updateUser({ name: newFullName || user.name, phone: formData.phone });
+    
+    const result = await saveProfileInfo({ 
+      name: newFullName || user.name, 
+      phone: formData.phone 
+    });
+
+    setIsSaving(false);
+    if (result.success) {
+      setMessage({ text: "Profil berhasil diperbarui secara permanen.", type: "success" });
+    } else {
+      setMessage({ text: result.message || "Gagal menyimpan perubahan.", type: "error" });
+    }
   };
 
   return (
@@ -75,11 +93,18 @@ export default function ProfileInfoCard() {
           />
         </div>
 
+        {message && (
+          <div className={`pv-form-message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+
         <button 
           type="submit"
           className="pill-btn profile-submit-btn"
+          disabled={isSaving}
         >
-          Simpan Perubahan
+          {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
         </button>
       </form>
     </section>

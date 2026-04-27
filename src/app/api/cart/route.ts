@@ -76,3 +76,19 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const cart = await cartService.clearCart(userId);
+    return NextResponse.json(cart);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("PATCH /api/cart error:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

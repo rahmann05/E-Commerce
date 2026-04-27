@@ -78,8 +78,16 @@ export default function LocationMap({ onLocationSelect, centerLat, centerLng }: 
 
     return () => {
       if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
+        try {
+          // Stop any ongoing animations
+          mapRef.current.off();
+          mapRef.current.stop();
+          mapRef.current.remove();
+        } catch (err) {
+          console.warn("Leaflet cleanup warning:", err);
+        } finally {
+          mapRef.current = null;
+        }
       }
     };
   }, [isMounted, onLocationSelect]);

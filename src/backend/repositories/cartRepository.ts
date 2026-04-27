@@ -123,6 +123,16 @@ export class CartRepository {
 
     return result;
   }
+
+  async clearCart(userId: string) {
+    return await prisma.cartItem.deleteMany({
+      where: {
+        cart: {
+          userId,
+        },
+      },
+    });
+  }
 }
 
 export const cartRepository = new CartRepository();

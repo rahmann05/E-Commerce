@@ -36,7 +36,7 @@ export function ProfileAddressView({
     postalCode: string;
     latitude?: number;
     longitude?: number;
-  }) => void;
+  }) => Promise<any>;
   onRemoveAddress: (id: string) => void;
 }) {
   const [formData, setFormData] = useState({
@@ -189,13 +189,42 @@ export function ProfileAddressView({
     }));
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleAdd = async () => {
+    if (!formData.recipient || !formData.phone || !formData.line1 || !formData.city || !formData.province) {
+      setErrorMsg("Mohon lengkapi semua data alamat utama.");
+      return;
+    }
+    
+    setErrorMsg(null);
+    setIsSaving(true);
+    try {
+      const result = await onSaveAddress(formData);
+      if (result && (result as any).success === false) {
+        setErrorMsg((result as any).message || "Gagal menyimpan alamat.");
+      } else {
+        setShowForm(false);
+        setFormData({ label: "Rumah", recipient: "", phone: "", line1: "", district: "", city: "", province: "", postalCode: "", latitude: undefined, longitude: undefined });
+      }
+    } catch (err) {
+      setErrorMsg("Terjadi kesalahan sistem saat menyimpan.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <section>
       <div className="pv-section-header">
         <p className="profile-section-title pv-title-inline">Alamat Pengiriman</p>
         <button 
           className="pill-btn pv-btn-primary"
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setShowForm(!showForm);
+            setErrorMsg(null);
+          }}
         >
           {showForm ? "Batal" : "Tambah Alamat Baru"}
         </button>
@@ -278,18 +307,20 @@ export function ProfileAddressView({
               <textarea id="address-line1" className="auth-input" rows={2} value={formData.line1} onChange={e => setFormData({...formData, line1: e.target.value})} placeholder="Jl. Merdeka No. 123" />
             </div>
 
+            {errorMsg && (
+              <div className="pv-form-message error mb-4">
+                {errorMsg}
+              </div>
+            )}
+
             <div className="pv-row-actions">
               <button
                 type="button"
                 className="pill-btn pv-btn-primary pv-flex-1"
-                onClick={async () => {
-                  if (!formData.recipient || !formData.line1) return;
-                  await onSaveAddress(formData);
-                  setShowForm(false);
-                  setFormData({ label: "Rumah", recipient: "", phone: "", line1: "", district: "", city: "", province: "", postalCode: "", latitude: undefined, longitude: undefined });
-                }}
+                disabled={isSaving}
+                onClick={handleAdd}
               >
-                Simpan Alamat
+                {isSaving ? "Menyimpan..." : "Simpan Alamat"}
               </button>
             </div>
           </div>
@@ -336,7 +367,7 @@ export function ProfilePaymentView({
   onRemovePayment,
 }: {
   paymentMethods: ProfilePaymentMethod[];
-  onSavePayment: (payload: { label: string; accountNumber: string; accountName: string }) => void;
+  onSavePayment: (payload: { label: string; accountNumber: string; accountName: string }) => Promise<any>;
   onRemovePayment: (id: string) => void;
 }) {
   const [formData, setFormData] = useState({
@@ -345,6 +376,26 @@ export function ProfilePaymentView({
     accountName: "",
   });
   const [showForm, setShowForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleAdd = async () => {
+    if (!formData.accountNumber || !formData.accountName) {
+      setErrorMsg("Mohon lengkapi nomor rekening dan nama pemilik.");
+      return;
+    }
+    setErrorMsg(null);
+    setIsSaving(true);
+    try {
+      await onSavePayment(formData);
+      setShowForm(false);
+      setFormData({ label: "BCA", accountNumber: "", accountName: "" });
+    } catch (err) {
+      setErrorMsg("Gagal menyimpan metode pembayaran.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <section>
@@ -352,7 +403,10 @@ export function ProfilePaymentView({
         <p className="profile-section-title pv-title-inline">Metode Pembayaran</p>
         <button 
           className="pill-btn pv-btn-primary"
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setShowForm(!showForm);
+            setErrorMsg(null);
+          }}
         >
           {showForm ? "Batal" : "Tambah Rekening"}
         </button>
@@ -383,17 +437,19 @@ export function ProfilePaymentView({
               <input id="payment-name" className="auth-input" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} placeholder="Sesuai buku tabungan" />
             </div>
 
+            {errorMsg && (
+              <div className="pv-form-message error mb-4">
+                {errorMsg}
+              </div>
+            )}
+
             <button
               type="button"
               className="pill-btn pv-btn-primary pv-btn-block pv-mt-16"
-              onClick={async () => {
-                if (!formData.accountNumber || !formData.accountName) return;
-                await onSavePayment(formData);
-                setShowForm(false);
-                setFormData({ label: "BCA", accountNumber: "", accountName: "" });
-              }}
+              disabled={isSaving}
+              onClick={handleAdd}
             >
-              Simpan Rekening
+              {isSaving ? "Menyimpan..." : "Simpan Rekening"}
             </button>
           </div>
         )}
