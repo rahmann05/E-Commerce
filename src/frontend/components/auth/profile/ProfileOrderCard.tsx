@@ -2,11 +2,12 @@
 
 /**
  * components/auth/profile/ProfileOrderCard.tsx
- * Order card — clean white style with product image thumbnail and clothing-color status badges.
+ * Order card — clean white style with product image thumbnail and status badges.
  */
 
-import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
+import { CreditCard } from "lucide-react";
 
 export interface MockOrder {
   id: string;
@@ -31,13 +32,9 @@ interface ProfileOrderCardProps {
   delay?: number;
 }
 
-export default function ProfileOrderCard({ order, delay = 0 }: ProfileOrderCardProps) {
+export default function ProfileOrderCard({ order }: ProfileOrderCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
+    <div
       style={{ 
         display: "flex",
         justifyContent: "space-between",
@@ -102,9 +99,34 @@ export default function ProfileOrderCard({ order, delay = 0 }: ProfileOrderCardP
           {order.total}
         </div>
         <span className={`profile-order-status status-${order.status}`}>
-          {STATUS_LABELS[order.status]}
+          {STATUS_LABELS[order.status] || order.status}
         </span>
+        {order.status === "awaiting_payment" && (
+          <Link 
+            href={`/checkout/payment/${order.id}`}
+            className="repay-btn"
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            style={{
+              marginTop: "0.5rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              color: "#fff",
+              background: "#111",
+              padding: "0.5rem 1rem",
+              borderRadius: "999px",
+              textDecoration: "none",
+              transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+          >
+            <CreditCard size={14} />
+            Bayar Sekarang
+          </Link>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 }

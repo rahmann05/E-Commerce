@@ -8,7 +8,7 @@
 
 import prisma from "@/backend/prisma/client";
 import type { CatalogueProduct } from "@/components/catalogue/types";
-import { CATALOGUE_PRODUCTS_FALLBACK } from "@/components/data/products";
+// import { CATALOGUE_PRODUCTS_FALLBACK } from "@/components/data/products"; // REMOVED MOCK
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,33 +19,20 @@ const LETTER_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function rowToProduct(
-  row: {
-    id: string;
-    name: string;
-    description: string;
-    price: unknown;
-    rating: number;
-    sizes: string | null;
-    sizeOptions: string[];
-    sizeStocks: number[];
-    images: string[];
-    colors: string[];
-    inStock: boolean;
-    category: { name: string };
-    stock: number;
-    variants: Array<{
-      id: string;
-      size: string;
-      color: string | null;
-      stock: number;
-    }>;
-  },
+  row: any,
   index: number
 ): CatalogueProduct {
+  const options = row.sizeOptions;
+  const stocks = row.sizeStocks;
+  const colors = row.colors;
+  const images = row.images;
+  const variants = row.variants;
+
   const categoryName = row.category.name.toLowerCase();
   const category = (["tees", "jeans", "accessories", "outerwear"].includes(categoryName)
     ? categoryName
     : "tees") as CatalogueProduct["category"];
+
   return {
     id: row.id,
     name: row.name,
@@ -55,17 +42,17 @@ function rowToProduct(
     rating: row.rating ?? 5,
     sizes:
       row.sizes ??
-      (row.sizeOptions.length > 0
-        ? row.sizeOptions.length > 1
-          ? `${row.sizeOptions[0]} - ${row.sizeOptions[row.sizeOptions.length - 1]}`
-          : row.sizeOptions[0]
+      (options.length > 0
+        ? options.length > 1
+          ? `${options[0]} - ${options[options.length - 1]}`
+          : options[0]
         : "S - XXL"),
-    image: row.images?.[0] ?? "/images/model1.jpg",
-    colors: row.colors ?? [],
-    sizeOptions: row.sizeOptions ?? [],
-    sizeStocks: row.sizeStocks ?? [],
-    inStock: row.inStock && (row.variants.length === 0 || row.variants.some((v) => v.stock > 0)),
-    variants: row.variants.map((v) => ({
+    image: images[0] ?? "/images/tees1.png",
+    colors: colors,
+    sizeOptions: options,
+    sizeStocks: stocks,
+    inStock: row.inStock && (variants.length === 0 || variants.some((v: any) => v.stock > 0)),
+    variants: variants.map((v: any) => ({
       id: v.id,
       productId: row.id,
       size: v.size,
@@ -104,14 +91,11 @@ function parseSizes(sizes: string | null): string[] {
   return [sizes.trim()].filter(Boolean);
 }
 
-function assertCorrelatedSizeStock(row: {
-  id: string;
-  sizes: string | null;
-  sizeOptions: string[];
-  sizeStocks: number[];
-  stock: number;
-}) {
-  if (row.sizeOptions.length === 0 && row.sizes) {
+function assertCorrelatedSizeStock(row: any) {
+  const options = row.sizeOptions;
+  const stocks = row.sizeStocks;
+
+  if (options.length === 0 && row.sizes) {
     const parsed = parseSizes(row.sizes);
     if (parsed.length > 0) {
       throw new Error(
@@ -120,13 +104,13 @@ function assertCorrelatedSizeStock(row: {
     }
   }
 
-  if (row.sizeOptions.length !== row.sizeStocks.length) {
+  if (options.length !== stocks.length) {
     throw new Error(
-      `Product ${row.id} invalid: sizeOptions (${row.sizeOptions.length}) tidak sama dengan sizeStocks (${row.sizeStocks.length}).`
+      `Product ${row.id} invalid: sizeOptions (${options.length}) tidak sama dengan sizeStocks (${stocks.length}).`
     );
   }
 
-  if (row.sizeStocks.some((n) => n < 0)) {
+  if (stocks.some((n: number) => n < 0)) {
     throw new Error(`Product ${row.id} invalid: sizeStocks tidak boleh negatif.`);
   }
 
@@ -157,10 +141,9 @@ export async function getProducts(
     rows.forEach(assertCorrelatedSizeStock);
 
     return rows.map(rowToProduct);
-  } catch (err) {
-    console.error("[DB] getProducts failed — using static fallback:", err);
-    if (category === "all") return CATALOGUE_PRODUCTS_FALLBACK;
-    return CATALOGUE_PRODUCTS_FALLBACK.filter((p) => p.category === category);
+  } catch (err: any) {
+    console.error("[DB] getProducts failed. Original error:", err);
+    throw new Error(`Database connection failed: ${err.message || "Unknown error"}. Please ensure your database is running.`);
   }
 }
 
@@ -184,7 +167,7 @@ export async function getProductById(
     return mapped.find((item: CatalogueProduct) => item.id === id) ?? null;
   } catch (err) {
     console.error("[DB] getProductById failed:", err);
-    return CATALOGUE_PRODUCTS_FALLBACK.find((p) => String(p.id) === String(id)) ?? null;
+    throw err;
   }
 }
 
@@ -205,6 +188,6 @@ export async function getCarouselImages(): Promise<string[]> {
     return products.flatMap(p => p.images).filter((img): img is string => !!img);
   } catch (err) {
     console.error("[DB] getCarouselImages failed:", err);
-    return CATALOGUE_PRODUCTS_FALLBACK.map(p => p.image).filter((img): img is string => img !== undefined);
+    throw err;
   }
 }

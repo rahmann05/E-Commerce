@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, X, ArrowRight } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import "./cart.css";
 
 
 /** Format price without toLocaleString (avoids SSR/client locale mismatch) */
@@ -27,9 +28,8 @@ export default function CartPage() {
 
   const actualCartTotal = items.reduce((total, item) => total + getActualPrice(item.product.price) * item.quantity, 0);
 
-  // Shipping flat fee
-  const shippingFee = items.length > 0 ? 50000 : 0;
-  const finalTotal = actualCartTotal + shippingFee;
+  // Total is now just the subtotal (removing shipping fee as requested)
+  const finalTotal = actualCartTotal;
 
   return (
     <>
@@ -37,14 +37,6 @@ export default function CartPage() {
       <main className="cart-page">
         <div className="cart-container">
         
-        {/* Header */}
-        <header className="cart-header">
-          <h1 className="cart-title">Tas Belanja</h1>
-          <div className="cart-subtitle">
-            {items.length > 0 ? `${items.length} Barang` : "Kosong"}
-          </div>
-        </header>
-
         {items.length === 0 ? (
           <div className="cart-empty-state">
             <p>Tas belanja Anda masih kosong.</p>
@@ -57,6 +49,11 @@ export default function CartPage() {
             
             {/* Left: Item List */}
             <div className="cart-items-col">
+              <header className="cart-header">
+                <h1 className="cart-title">Tas Belanja</h1>
+                <span className="cart-subtitle">{items.length} {items.length === 1 ? "BARANG" : "BARANG"}</span>
+              </header>
+
               <AnimatePresence>
                 {items.map((item, index) => (
                   <motion.div 
@@ -69,29 +66,31 @@ export default function CartPage() {
                   >
                     {/* Product Image */}
                     <div className="cart-item-image">
-                      <Image src={item.product.imageUrl || ""} alt={item.product.name} fill style={{ objectFit: "cover" }} />
+                      {(() => {
+                        const src = item.product.imageUrl || 
+                                    item.product.image || 
+                                    (item.product.images && item.product.images.length > 0 ? item.product.images[0] : null) || 
+                                    "/images/placeholder.png";
+                        return <Image src={src} alt={item.product.name} fill style={{ objectFit: "cover" }} />;
+                      })()}
                     </div>
 
                     {/* Details */}
                     <div className="cart-item-details">
                       <div className="cart-item-header">
-                        <Link href={`/catalogue/${item.productId}`} className="cart-item.product.name">{item.product.name}</Link>
+                        <div className="cart-item-info-group">
+                          <Link href={`/catalogue/${item.productId}`} className="cart-item-name">{item.product.name}</Link>
+                          <div className="cart-item-meta">
+                            {item.variant.size} · {item.variant.color || "Default"}
+                          </div>
+                        </div>
                         <button
                           type="button"
                           className="cart-item-remove"
                           onClick={() => removeFromCart(item.id)}
-                          aria-label={`Hapus ${item.product.name} dari tas belanja`}
-                          title="Hapus item"
                         >
-                          <X size={16} />
+                          Hapus
                         </button>
-                      </div>
-                      
-                      <div className="cart-item-meta">
-                        Size: {item.variant.size} · Color:
-                        <svg className="cart-color-dot" viewBox="0 0 10 10" aria-hidden="true">
-                          <circle cx="5" cy="5" r="4.5" fill={item.variant.color} stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
-                        </svg>
                       </div>
 
                       <div className="cart-item-footer">
@@ -101,8 +100,6 @@ export default function CartPage() {
                             type="button"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             disabled={item.quantity <= 1}
-                            aria-label={`Kurangi jumlah ${item.product.name}`}
-                            title="Kurangi jumlah"
                           >
                             <Minus size={14} />
                           </button>
@@ -110,16 +107,24 @@ export default function CartPage() {
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            aria-label={`Tambah jumlah ${item.product.name}`}
-                            title="Tambah jumlah"
                           >
                             <Plus size={14} />
                           </button>
                         </div>
                         
                         {/* Price */}
-                        <div className="cart-item.product.price">
-                          Rp{formatPrice(getActualPrice(item.product.price) * item.quantity)}
+                        <div className="cart-item-price">
+                          <AnimatePresence mode="wait">
+                            <motion.span
+                              key={getActualPrice(item.product.price) * item.quantity}
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 5 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              Rp {formatPrice(getActualPrice(item.product.price) * item.quantity)}
+                            </motion.span>
+                          </AnimatePresence>
                         </div>
                       </div>
                     </div>
@@ -135,19 +140,34 @@ export default function CartPage() {
                 
                 <div className="cart-summary-row">
                   <span>Subtotal</span>
-                  <span>Rp{formatPrice(actualCartTotal)}</span>
-                </div>
-                
-                <div className="cart-summary-row">
-                  <span>Pengiriman</span>
-                  <span>Rp{formatPrice(shippingFee)}</span>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={actualCartTotal}
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      Rp {formatPrice(actualCartTotal)}
+                    </motion.span>
+                  </AnimatePresence>
                 </div>
 
                 <div className="cart-summary-divider" />
                 
                 <div className="cart-summary-total">
                   <span>Total</span>
-                  <span>Rp{formatPrice(finalTotal)}</span>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={finalTotal}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2, type: "spring", stiffness: 300, damping: 30 }}
+                    >
+                      Rp {formatPrice(finalTotal)}
+                    </motion.span>
+                  </AnimatePresence>
                 </div>
 
                 <button

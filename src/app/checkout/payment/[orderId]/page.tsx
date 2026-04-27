@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Clock, ArrowLeft, RefreshCw } from "lucide-react";
+import { CheckCircle2, Clock, ArrowLeft, RefreshCw, CreditCard } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useProfileData } from "@/context/ProfileDataContext";
@@ -15,16 +15,18 @@ const PAYMENT_METHODS: Record<string, { midtransId: string; bank?: string }> = {
   bca_va: { midtransId: "bank_transfer", bank: "bca" },
   bni_va: { midtransId: "bank_transfer", bank: "bni" },
   bri_va: { midtransId: "bank_transfer", bank: "bri" },
+  mandiri_va: { midtransId: "echannel" },
   qris: { midtransId: "qris" },
   gopay: { midtransId: "gopay" },
+  alfamart: { midtransId: "cstore" },
 };
 
 interface MidtransStatus {
-  transaction_status: string;
-  payment_type: string;
-  gross_amount: string;
+  transaction_status?: string;
+  payment_type?: string;
+  gross_amount?: string | number;
   order_id: string;
-  transaction_time: string;
+  transaction_time?: string;
   expiry_time?: string;
   va_numbers?: Array<{ bank: string; va_number: string }>;
   permata_va_number?: string;
@@ -32,6 +34,10 @@ interface MidtransStatus {
   biller_code?: string;
   actions?: Array<{ name: string; url: string; method: string }>;
   qr_code_url?: string;
+  // Snap specific
+  token?: string;
+  redirect_url?: string;
+  method?: string;
 }
 
 export default function PaymentStatusPage() {
@@ -61,14 +67,22 @@ export default function PaymentStatusPage() {
         setStatus(data);
         setLoading(false);
       } else if (!isRetry) {
-        await initiateCharge();
+        const methodKey = new URLSearchParams(window.location.search).get("method");
+        if (methodKey) {
+          await initiateCharge(methodKey);
+        } else {
+          // No method in URL, and no status in Midtrans yet. 
+          // Let the user choose a method.
+          setLoading(false);
+        }
       } else {
         setError(data.error || "Gagal mengambil data pembayaran.");
         setLoading(false);
       }
     } catch (err) {
       console.error("Status fetch error:", err);
-      if (!isRetry) await initiateCharge();
+      const methodKey = new URLSearchParams(window.location.search).get("method");
+      if (!isRetry && methodKey) await initiateCharge(methodKey);
       else {
         setError("Terjadi kesalahan koneksi.");
         setLoading(false);
@@ -76,7 +90,8 @@ export default function PaymentStatusPage() {
     }
   };
 
-  const initiateCharge = async () => {
+  const initiateCharge = async (forcedMethod?: string) => {
+    setLoading(true); // Ensure loading state when starting charge
     if (!localOrder) {
       setTimeout(() => {
         if (!status && !error) fetchStatus(true);
@@ -92,7 +107,7 @@ export default function PaymentStatusPage() {
     }
 
     try {
-      const methodKey = new URLSearchParams(window.location.search).get("method") || "bca_va";
+      const methodKey = forcedMethod || new URLSearchParams(window.location.search).get("method") || "bca_va";
       const methodObj = PAYMENT_METHODS[methodKey];
 
       const res = await fetch("/api/checkout/midtrans", {
@@ -112,6 +127,7 @@ export default function PaymentStatusPage() {
       const data = await res.json();
       if (data.success) {
         setStatus(data);
+        setError(null);
       } else {
         setError(data.error || "Gagal memulai pembayaran.");
       }
@@ -138,7 +154,7 @@ export default function PaymentStatusPage() {
   const paymentDetails = useMemo(() => {
     if (!status) return null;
 
-    let methodLabel = (status.payment_type || "Pembayaran").replace(/_/g, " ").toUpperCase();
+    let methodLabel = (status.payment_type || status.method || "Pembayaran").replace(/_/g, " ").toUpperCase();
     let vaNumber = "";
 
     if (status.va_numbers && status.va_numbers.length > 0) {
@@ -149,9 +165,15 @@ export default function PaymentStatusPage() {
       vaNumber = status.permata_va_number;
     } else if (status.payment_type === "qris") {
       methodLabel = "QRIS / E-WALLET";
+    } else if (status.payment_type === "gopay") {
+      methodLabel = "GOPAY";
+    } else if (status.payment_type === "cstore") {
+      methodLabel = "ALFAMART / INDOMARET";
     } else if (status.payment_type === "echannel") {
       methodLabel = "MANDIRI BILL PAYMENT";
       vaNumber = `${status.biller_code} / ${status.bill_key}`;
+    } else if (status.method === "snap") {
+      methodLabel = "SNAP GATEWAY";
     }
 
     return { methodLabel, vaNumber };
@@ -199,11 +221,9 @@ export default function PaymentStatusPage() {
     );
   }
 
-  if (!status) return null;
-
-  const isSettled = status.transaction_status === "settlement" || status.transaction_status === "capture";
-  const isPending = status.transaction_status === "pending";
-  const isFailed = ["deny", "cancel", "expire"].includes(status.transaction_status);
+  const isSettled = status?.transaction_status === "settlement" || status?.transaction_status === "capture";
+  const isPending = status?.transaction_status === "pending";
+  const isFailed = ["deny", "cancel", "expire"].includes(status?.transaction_status || "");
 
   const getStatusLabel = () => {
     if (isSettled) return "Pembayaran Berhasil";
@@ -222,36 +242,42 @@ export default function PaymentStatusPage() {
               <CheckCircle2 size={64} color="#10b981" style={{ margin: "0 auto 1.5rem" }} />
             ) : isFailed ? (
               <ArrowLeft size={64} color="#ef4444" style={{ margin: "0 auto 1.5rem" }} />
-            ) : (
+            ) : isPending ? (
               <Clock size={64} color="#f59e0b" style={{ margin: "0 auto 1.5rem" }} />
+            ) : (
+              <CreditCard size={64} color="#111" style={{ margin: "0 auto 1.5rem", opacity: 0.1 }} />
             )}
             <h1>{getStatusLabel()}</h1>
-            <p>Order ID: {status.order_id || orderId}</p>
+            <p>Order ID: {status?.order_id || orderId}</p>
           </div>
 
           <div className="payment-amount-card">
             <div className="payment-amount-label">Total Pembayaran</div>
-            <div className="payment-amount-value">{formatPrice(status.gross_amount)}</div>
+            <div className="payment-amount-value">
+              {formatPrice(status?.gross_amount || localOrder?.total)}
+            </div>
           </div>
 
-          <div className="payment-details">
-            <div className="detail-row">
-              <span className="detail-label">Metode Pembayaran</span>
-              <span className="detail-value">{paymentDetails?.methodLabel}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Status</span>
-              <span className={`status-badge status-${status.transaction_status}`}>
-                {isPending ? "MENUNGGU" : status.transaction_status?.toUpperCase() || "MEMPROSES"}
-              </span>
-            </div>
-            {status.expiry_time && isPending && (
+          {status && (
+            <div className="payment-details">
               <div className="detail-row">
-                <span className="detail-label">Batas Waktu</span>
-                <span className="detail-value" style={{ color: "#ef4444", fontWeight: "600" }}>{status.expiry_time}</span>
+                <span className="detail-label">Metode Pembayaran</span>
+                <span className="detail-value">{paymentDetails?.methodLabel}</span>
               </div>
-            )}
-          </div>
+              <div className="detail-row">
+                <span className="detail-label">Status</span>
+                <span className={`status-badge status-${status.transaction_status}`}>
+                  {isPending ? "MENUNGGU" : status.transaction_status?.toUpperCase() || "MEMPROSES"}
+                </span>
+              </div>
+              {status.expiry_time && isPending && (
+                <div className="detail-row">
+                  <span className="detail-label">Batas Waktu</span>
+                  <span className="detail-value" style={{ color: "#ef4444", fontWeight: "600" }}>{status.expiry_time}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {localOrder && (
             <div className="payment-address-section">
@@ -271,6 +297,17 @@ export default function PaymentStatusPage() {
 
           {isPending && (
             <div style={{ marginTop: "1rem" }}>
+              {status.method === "snap" && status.redirect_url && (
+                <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+                  <p style={{ fontSize: "0.85rem", marginBottom: "1rem", color: "#666" }}>
+                    Pembayaran diproses melalui Snap. Klik tombol di bawah jika jendela tidak terbuka.
+                  </p>
+                  <a href={status.redirect_url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-block' }}>
+                    Bayar Sekarang (Snap)
+                  </a>
+                </div>
+              )}
+
               {paymentDetails?.vaNumber && (
                 <div className="va-container">
                   <span style={{ fontSize: "0.8rem", opacity: 0.8 }}>Nomor Virtual Account</span>
@@ -313,6 +350,20 @@ export default function PaymentStatusPage() {
                   Lihat Daftar Pesanan
                 </Link>
               </>
+            ) : (!status || (!status.transaction_status && status.method !== "snap")) ? (
+              <div style={{ width: "100%", marginTop: "1rem" }}>
+                <p style={{ textAlign: "center", fontSize: "0.85rem", color: "#666", marginBottom: "1.5rem" }}>
+                  Pilih metode pembayaran untuk melanjutkan
+                </p>
+                <div className="payment-options-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <button onClick={() => initiateCharge("qris")} className="btn-method">QRIS / E-Wallet</button>
+                  <button onClick={() => initiateCharge("gopay")} className="btn-method">GoPay</button>
+                  <button onClick={() => initiateCharge("bca_va")} className="btn-method">BCA Virtual Account</button>
+                  <button onClick={() => initiateCharge("mandiri_va")} className="btn-method">Mandiri Bill</button>
+                  <button onClick={() => initiateCharge("bni_va")} className="btn-method">BNI Virtual Account</button>
+                  <button onClick={() => initiateCharge("alfamart")} className="btn-method">Alfamart</button>
+                </div>
+              </div>
             ) : (
               <Link href="/profile?tab=orders" className="btn-primary">
                 Kembali ke Profil

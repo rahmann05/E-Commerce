@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
 import prisma from "@/backend/prisma/client";
 
-function getAuthenticatedUserId(request: Request): string | null {
-  const userId = request.headers.get("x-user-id");
-  if (!userId) return null;
-  return userId.trim() || null;
+function getAuthenticatedUserId(req: Request): string | null {
+  const cookieHeader = req.headers.get("cookie") || "";
+  const match = cookieHeader.match(/novure_uid=([^;]+)/);
+  const userId = match ? match[1] : null;
+  return userId?.trim() || null;
 }
 
 function toNumber(value: unknown): number {
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Order tidak memiliki item." }, { status: 400 });
     }
 
-    const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
+    const serverKey = process.env.MIDTRANS_SERVER_KEY?.trim();
     const isProduction = process.env.MIDTRANS_IS_PRODUCTION === "true";
 
     if (!serverKey) {
@@ -57,15 +58,19 @@ export async function POST(request: Request) {
     console.log(`[Midtrans] Environment: ${isProduction ? "PRODUCTION" : "SANDBOX"}`);
     console.log(`[Midtrans] Key Prefix: ${serverKey.substring(0, 7)}`);
 
+    const merchantId = process.env.MIDTRANS_MERCHANT_ID?.trim();
+
     // Initialize Midtrans clients
     const snap = new midtransClient.Snap({
       isProduction,
       serverKey,
+      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY?.trim(),
     });
 
     const core = new midtransClient.CoreApi({
       isProduction,
       serverKey,
+      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY?.trim(),
     });
 
     const grossAmount = toNumber(order.totalAmount);
@@ -133,6 +138,27 @@ export async function POST(request: Request) {
           parameter.qris = { acquirer: "gopay" };
         }
 
+        if (payment_type === "echannel") {
+          parameter.echannel = {
+            bill_info1: "Payment for Order",
+            bill_info2: String(order_id),
+          };
+        }
+
+        if (payment_type === "cstore") {
+          parameter.cstore = {
+            store: "alfamart",
+            message: "Payment for Novure Order",
+          };
+        }
+
+        if (payment_type === "gopay") {
+          parameter.gopay = {
+            enable_callback: true,
+            callback_url: `${request.url.split("/api")[0]}/profile?tab=orders`,
+          };
+        }
+
         console.log("Attempting Core API charge:", payment_type, bank);
         const chargeResponse = await core.charge(parameter);
         
@@ -141,10 +167,20 @@ export async function POST(request: Request) {
           method: "core",
           ...chargeResponse
         });
-      } catch (coreError: unknown) {
-        const msg = coreError instanceof Error ? coreError.message : "Unknown error";
-        console.warn("Core API Charge failed, falling back to Snap:", msg);
-        // If Core API fails (e.g. channel not activated), we fall back to Snap below
+      } catch (coreError: any) {
+        console.error("Midtrans Core API Error Details:", {
+          message: coreError.message,
+          ApiResponse: coreError.ApiResponse,
+          statusCode: coreError.statusCode
+        });
+        
+        const msg = coreError.message || "Gagal memproses pembayaran.";
+        
+        return NextResponse.json({ 
+          success: false, 
+          error: msg,
+          details: coreError.ApiResponse || coreError
+        }, { status: 400 });
       }
     }
 

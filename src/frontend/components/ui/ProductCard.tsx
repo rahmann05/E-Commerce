@@ -11,6 +11,11 @@ interface ProductCardProps {
   index: number;
 }
 
+function formatPrice(price: number): string {
+  const finalPrice = price < 10000 ? price * 1000 : price;
+  return finalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 export default function ProductCard({ product, index }: ProductCardProps) {
   const [hovered, setHovered] = useState(false);
 
@@ -34,6 +39,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
           alt={product.name}
           fill
           className="object-cover object-top"
+          sizes="(max-width: 768px) 100vw, 300px"
         />
         {/* Hover overlay shine effect */}
         <motion.div
@@ -65,7 +71,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
               />
             ))}
           </div>
-          <div className="product-card-price">${product.price}</div>
+          <div className="product-card-price">Rp {formatPrice(product.price)}</div>
         </div>
       </div>
     </motion.div>

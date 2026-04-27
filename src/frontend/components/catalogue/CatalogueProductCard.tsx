@@ -13,7 +13,9 @@ interface Props {
 
 /** Format price as Indonesian thousand-separator without toLocaleString (avoids hydration mismatch) */
 function formatPrice(price: number): string {
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  // If price is low (e.g. 250), assume it's in thousands
+  const finalPrice = price < 10000 ? price * 1000 : price;
+  return finalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 export default function CatalogueProductCard({ product, onClick }: Props) {
@@ -84,7 +86,7 @@ export default function CatalogueProductCard({ product, onClick }: Props) {
         </div>
 
         <div className="cat-product-footer">
-          <span className="cat-product-price">Rp{formatPrice(product.price)}</span>
+          <span className="cat-product-price">Rp {formatPrice(product.price)}</span>
           <div className="cat-color-dots">
             {(((product.colors || []) || []) || []).slice(0, 4).map((color) => (
               <span

@@ -17,13 +17,31 @@ export default function Navbar() {
   const isHome = pathname === "/";
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (!isHome) return;
-    setVisible(latest > window.innerHeight * 0.85);
-    setScrolled(latest > window.innerHeight);
+    if (isHome) {
+      setVisible(latest > window.innerHeight * 0.85);
+      setScrolled(latest > window.innerHeight);
+    } else if (isProfile) {
+      // Profile hero is around 400-500px
+      setVisible(true); // Always show on profile, just change style
+      setScrolled(latest > 350);
+    }
   });
 
   // Always show on sub-pages
   const shouldShow = !isHome || visible;
+
+  const isProfile = pathname === "/profile";
+  const isDarkPage = isHome || isProfile;
+
+  // Determine colors
+  const navBg = scrolled 
+    ? "rgba(245,245,243,0.95)" 
+    : isDarkPage && !visible 
+      ? "transparent" 
+      : "rgba(245,245,243,0.88)";
+  
+  const navTextColor = (isDarkPage && !visible && !scrolled) ? "#fff" : "#111";
+  const navBorder = (isDarkPage && !visible && !scrolled) ? "none" : "1px solid rgba(0,0,0,0.05)";
 
   return (
     <motion.nav
@@ -39,14 +57,19 @@ export default function Navbar() {
         left: 0,
         right: 0,
         zIndex: 100,
-        background: scrolled
-          ? "rgba(245,245,243,0.95)"
-          : "rgba(245,245,243,0.88)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(0,0,0,0.05)",
+        background: navBg,
+        backdropFilter: (isDarkPage && !visible && !scrolled) ? "none" : "blur(20px)",
+        WebkitBackdropFilter: (isDarkPage && !visible && !scrolled) ? "none" : "blur(20px)",
+        borderBottom: navBorder,
+        color: navTextColor,
+        transition: "background 0.3s ease, color 0.3s ease"
       }}
     >
+      <style jsx global>{`
+        .main-navbar a { color: ${navTextColor} !important; }
+        .main-navbar .brand { color: ${navTextColor} !important; }
+        .navbar-auth-link { color: ${navTextColor} !important; }
+      `}</style>
       <div className="main-navbar">
         <div style={{ display: "flex", gap: "2.5rem" }}>
           <Link href="/">Home</Link>

@@ -29,6 +29,7 @@ interface CartContextType {
   isLoading: boolean;
   error: string | null;
   clearError: () => void;
+  clearCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -122,8 +123,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   
   const clearError = () => setError(null);
 
+  const clearCart = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch("/api/cart", {
+        method: "PATCH",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to clear cart");
+      
+      setItems([]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => {
+    const p = Number(item.product.price ?? 0);
+    const actualPrice = p < 10000 ? p * 1000 : p;
+    return sum + actualPrice * item.quantity;
+  }, 0);
 
   return (
     <CartContext.Provider
@@ -136,7 +159,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalPrice,
         isLoading,
         error,
-        clearError
+        clearError,
+        clearCart
       }}
     >
       {children}

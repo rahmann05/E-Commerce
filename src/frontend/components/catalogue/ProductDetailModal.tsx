@@ -17,7 +17,9 @@ interface Props {
 
 /** Format price without toLocaleString (avoids SSR/client locale mismatch) */
 function formatPrice(price: number): string {
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  // If price is low (e.g. 250), assume it's in thousands
+  const finalPrice = price < 10000 ? price * 1000 : price;
+  return finalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 const LETTER_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
@@ -181,18 +183,19 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                   bottom: "1.5rem",
                   left: "1.5rem",
                   zIndex: 5,
-                  background: "rgba(245,245,243,0.92)",
+                  background: "rgba(255,255,255,0.95)",
                   backdropFilter: "blur(20px)",
                   borderRadius: "3rem",
-                  padding: "0.5rem 1.2rem",
-                  fontSize: "1.1rem",
-                  fontWeight: 800,
-                  letterSpacing: "-0.03em",
+                  padding: "0.6rem 1.4rem",
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
                   color: "#111",
-                  boxShadow: "6px 6px 14px rgba(0,0,0,0.12), -4px -4px 10px rgba(255,255,255,0.8)",
+                  border: "1px solid rgba(0,0,0,0.05)",
+                  boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
                 }}
               >
-                Rp{formatPrice(product.price)}
+                Rp {formatPrice(product.price)}
               </motion.div>
 
               {/* Close button */}
@@ -296,7 +299,7 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                   onClick={handleAdd}
                   whileTap={{ scale: 0.97 }}
                   style={{
-                    background: user ? "#111" : "rgba(155,81,224,0.9)",
+                    background: "#111",
                   }}
                 >
                   <AnimatePresence mode="wait">
@@ -322,7 +325,24 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                 </motion.button>
                 <button
                   type="button"
-                  className="pill-btn mt-3 w-full"
+                  className="pill-btn"
+                  style={{
+                    width: "100%",
+                    marginTop: "0.8rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    background: "transparent",
+                    border: "1px solid #111",
+                    color: "#111",
+                    height: "3.2rem",
+                    borderRadius: "2rem",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
                   onClick={() => {
                     if (!product) return;
                     if (!user) {
@@ -340,15 +360,25 @@ export default function ProductDetailModal({ product, onClose }: Props) {
                     setWishlistMessage(
                       wished ? "Dihapus dari wishlist." : "Ditambahkan ke wishlist."
                     );
+                    setTimeout(() => setWishlistMessage(null), 3000);
                   }}
                 >
-                  <Heart size={14} className="mr-2" />
-                  {wished ? "Hapus dari Wishlist" : "Tambah ke Wishlist"}
+                  <Heart 
+                    size={16} 
+                    fill={wished ? "#ff3b30" : "transparent"} 
+                    color={wished ? "#ff3b30" : "#111"} 
+                    style={{ transition: "all 0.3s ease" }}
+                  />
+                  {wished ? "Terdaftar di Wishlist" : "Tambah ke Wishlist"}
                 </button>
                 {wishlistMessage && (
-                  <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#777" }}>
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#111", textAlign: "center", fontWeight: 500 }}
+                  >
                     {wishlistMessage}
-                  </div>
+                  </motion.div>
                 )}
 
                 {addError && (

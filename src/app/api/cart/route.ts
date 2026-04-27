@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { cartService } from "@/backend/services/cartService";
 
 function getAuthenticatedUserId(req: Request): string | null {
-  const userId = req.headers.get("x-user-id");
-  if (!userId) return null;
-  return userId.trim() || null;
+  const cookieHeader = req.headers.get("cookie") || "";
+  const match = cookieHeader.match(/novure_uid=([^;]+)/);
+  const userId = match ? match[1] : null;
+  return userId?.trim() || null;
 }
 
 export async function GET(req: Request) {
@@ -72,6 +73,22 @@ export async function DELETE(req: Request) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal Server Error";
     console.error("DELETE /api/cart error:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const cart = await cartService.clearCart(userId);
+    return NextResponse.json(cart);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("PATCH /api/cart error:", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

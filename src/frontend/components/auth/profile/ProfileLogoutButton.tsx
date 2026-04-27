@@ -2,10 +2,9 @@
 
 /**
  * components/auth/profile/ProfileLogoutButton.tsx
- * Logout CTA — clean dark outline pill matching Dribbble button style.
+ * Logout CTA.
  */
 
-import { motion } from "framer-motion";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -20,15 +19,10 @@ export default function ProfileLogoutButton() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      style={{ display: "flex", justifyContent: "flex-start" }}
-    >
-      <motion.button
+    <div style={{ display: "flex", justifyContent: "flex-start" }}>
+      <button
         onClick={handleLogout}
+        className="profile-logout-btn"
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -43,16 +37,10 @@ export default function ProfileLogoutButton() {
           cursor: "pointer",
           transition: "all 0.3s ease",
         }}
-        whileHover={{
-          background: "#111",
-          color: "#fff",
-          borderColor: "#111",
-        }}
-        whileTap={{ scale: 0.97 }}
       >
         <LogOut size={14} />
         Keluar
-      </motion.button>
-    </motion.div>
+      </button>
+    </div>
   );
 }

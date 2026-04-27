@@ -11,7 +11,9 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  imageUrl?: string;
+  imageUrl?: string; // Prisma compatibility
+  image?: string;    // Fallback/Legacy
+  images?: string[]; // Prisma Array
   category?: string;
   sizeOptions?: string[];
   sizeStocks?: number[];
@@ -21,7 +23,6 @@ export interface Product {
 export interface CatalogueProduct extends Product {
   rating?: number;
   sizes?: string;
-  image?: string;
   colors?: string[];
   inStock?: boolean;
 }

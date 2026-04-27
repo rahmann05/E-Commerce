@@ -6,26 +6,41 @@
  */
 
 import { useState, type FormEvent } from "react";
-import type { SessionUser } from "@/lib/mock-users";
-import { motion } from "framer-motion";
-import "./profile.css";
+import { useAuth } from "@/context/AuthContext";
+import { useProfileData } from "@/context/ProfileDataContext";
 
-interface ProfileInfoCardProps {
-  user: SessionUser;
-  onSave: (payload: { name: string; phone: string }) => void;
-}
+export default function ProfileInfoCard() {
+  const { user } = useAuth();
+  const { saveProfileInfo } = useProfileData();
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) {
+  if (!user) return null;
+
+  const fullName = user.name || "";
   const [formData, setFormData] = useState({
-    firstName: user.name.split(" ")[0] || "",
-    lastName: user.name.split(" ")[1] || "",
+    firstName: fullName.split(" ")[0] || "",
+    lastName: fullName.split(" ").slice(1).join(" ") || "",
     phone: user.phone || "",
   });
 
-  const handleSave = (e: FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-    onSave({ name: fullName || user.name, phone: formData.phone });
+    setIsSaving(true);
+    setMessage(null);
+    const newFullName = `${formData.firstName} ${formData.lastName}`.trim();
+    
+    const result = await saveProfileInfo({ 
+      name: newFullName || user.name, 
+      phone: formData.phone 
+    });
+
+    setIsSaving(false);
+    if (result.success) {
+      setMessage({ text: "Profil berhasil diperbarui secara permanen.", type: "success" });
+    } else {
+      setMessage({ text: result.message || "Gagal menyimpan perubahan.", type: "error" });
+    }
   };
 
   return (
@@ -33,7 +48,7 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
       <p className="profile-section-title">Informasi Pribadi</p>
       <form onSubmit={handleSave} className="profile-info-form">
         <div className="profile-info-grid">
-          <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <div className="auth-input-wrapper">
             <label htmlFor="info-first-name" className="auth-input-label">Nama Depan</label>
             <input 
               id="info-first-name"
@@ -42,8 +57,8 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
             />
-          </motion.div>
-          <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          </div>
+          <div className="auth-input-wrapper">
             <label htmlFor="info-last-name" className="auth-input-label">Nama Belakang</label>
             <input 
               id="info-last-name"
@@ -52,10 +67,10 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
             />
-          </motion.div>
+          </div>
         </div>
 
-        <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <div className="auth-input-wrapper">
           <label htmlFor="info-email" className="auth-input-label">Email</label>
           <input 
             id="info-email"
@@ -64,9 +79,9 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
             value={user.email}
             disabled
           />
-        </motion.div>
+        </div>
 
-        <motion.div className="auth-input-wrapper" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+        <div className="auth-input-wrapper">
           <label htmlFor="info-phone" className="auth-input-label">No. Telepon</label>
           <input 
             id="info-phone"
@@ -76,15 +91,21 @@ export default function ProfileInfoCard({ user, onSave }: ProfileInfoCardProps) 
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             placeholder="+62"
           />
-        </motion.div>
+        </div>
 
-        <motion.button 
+        {message && (
+          <div className={`pv-form-message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+
+        <button 
           type="submit"
           className="pill-btn profile-submit-btn"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+          disabled={isSaving}
         >
-          Simpan Perubahan
-        </motion.button>
+          {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+        </button>
       </form>
     </section>
   );
