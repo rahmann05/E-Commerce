@@ -14,6 +14,8 @@ import { fetchProvinces, fetchRegencies, fetchDistricts } from "@/lib/api/geogra
 import dynamic from "next/dynamic";
 const LocationMap = dynamic(() => import("@/components/checkout/LocationMap"), { ssr: false });
 
+import "./profile.css";
+
 export function ProfileAddressView({
   addresses,
   onSaveAddress,
@@ -50,10 +52,10 @@ export function ProfileAddressView({
 
   // Geo Data State
   const [provinces, setProvinces] = useState<{id: string, name: string}[]>([]);
-  const [regencies, setRegencies] = useState<{id: string, name: string}[]>([]);
-  const [districts, setDistricts] = useState<{id: string, name: string}[]>([]);
+  const [, setRegencies] = useState<{id: string, name: string}[]>([]);
+  const [, setDistricts] = useState<{id: string, name: string}[]>([]);
 
-  const [selectedProvinceId, setSelectedProvinceId] = useState("");
+  const [selectedProvinceId, ] = useState("");
   const [selectedRegencyId, setSelectedRegencyId] = useState("");
   const changeSourceRef = useRef<'map' | 'dropdown' | null>(null);
 
@@ -66,31 +68,51 @@ export function ProfileAddressView({
 
   // Fetch Regencies when province changes
   useEffect(() => {
+    let active = true;
     if (selectedProvinceId) {
-      fetchRegencies(selectedProvinceId).then(setRegencies);
-      if (changeSourceRef.current !== 'map') {
-        setSelectedRegencyId("");
-        setFormData(prev => ({ ...prev, city: "", district: "" }));
-        setDistricts([]);
-      }
+      fetchRegencies(selectedProvinceId).then(data => {
+        if (active) {
+          setRegencies(data);
+          if (changeSourceRef.current !== 'map') {
+            setSelectedRegencyId("");
+            setFormData(prev => ({ ...prev, city: "", district: "" }));
+            setDistricts([]);
+          }
+        }
+      });
     } else {
-      setRegencies([]);
-      setSelectedRegencyId("");
-      setDistricts([]);
+      setTimeout(() => {
+        if (active) {
+          setRegencies([]);
+          setSelectedRegencyId("");
+          setDistricts([]);
+        }
+      }, 0);
     }
+    return () => { active = false; };
   }, [selectedProvinceId]);
 
   // Fetch Districts when regency changes
   useEffect(() => {
+    let active = true;
     if (selectedRegencyId) {
-      fetchDistricts(selectedRegencyId).then(setDistricts);
-      if (changeSourceRef.current !== 'map') {
-        setFormData(prev => ({ ...prev, district: "" }));
-      }
+      fetchDistricts(selectedRegencyId).then(data => {
+        if (active) {
+          setDistricts(data);
+          if (changeSourceRef.current !== 'map') {
+            setFormData(prev => ({ ...prev, district: "" }));
+          }
+        }
+      });
     } else {
-      setDistricts([]);
-      setFormData(prev => ({ ...prev, district: "" }));
+      setTimeout(() => {
+        if (active) {
+          setDistricts([]);
+          setFormData(prev => ({ ...prev, district: "" }));
+        }
+      }, 0);
     }
+    return () => { active = false; };
   }, [selectedRegencyId]);
 
 
@@ -118,7 +140,7 @@ export function ProfileAddressView({
     return () => clearTimeout(timer);
   }, [formData.district, formData.city, formData.province, showForm]);
 
-  const handleLocationSelect = async (address: string, lat: number, lng: number, rawAddr: any, postalCode: string) => {
+  const handleLocationSelect = async (address: string, lat: number, lng: number, rawAddr: Record<string, unknown>, postalCode: string) => {
     changeSourceRef.current = 'map';
     
     // 1. Update basic fields
@@ -152,9 +174,9 @@ export function ProfileAddressView({
         .trim();
     };
 
-    const prov = translateMapTerm(rawAddr.state || rawAddr.region || "");
-    const city = translateMapTerm(rawAddr.city || rawAddr.county || rawAddr.municipality || "");
-    const dist = translateMapTerm(rawAddr.suburb || rawAddr.district || rawAddr.village || rawAddr.town || "");
+    const prov = translateMapTerm((rawAddr.state as string) || (rawAddr.region as string) || "");
+    const city = translateMapTerm((rawAddr.city as string) || (rawAddr.county as string) || (rawAddr.municipality as string) || "");
+    const dist = translateMapTerm((rawAddr.suburb as string) || (rawAddr.district as string) || (rawAddr.village as string) || (rawAddr.town as string) || "");
 
     setFormData(prev => ({ 
       ...prev, 
@@ -191,19 +213,20 @@ export function ProfileAddressView({
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
               <div className="auth-input-wrapper">
-                <label className="auth-input-label">Nama Penerima</label>
-                <input className="auth-input" value={formData.recipient} onChange={e => setFormData({...formData, recipient: e.target.value})} placeholder="Contoh: Alex Doe" />
+                <label htmlFor="address-recipient" className="auth-input-label">Nama Penerima</label>
+                <input id="address-recipient" className="auth-input" value={formData.recipient} onChange={e => setFormData({...formData, recipient: e.target.value})} placeholder="Contoh: Alex Doe" />
               </div>
               <div className="auth-input-wrapper">
-                <label className="auth-input-label">Nomor Telepon</label>
-                <input className="auth-input" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="0812xxxx" />
+                <label htmlFor="address-phone" className="auth-input-label">Nomor Telepon</label>
+                <input id="address-phone" className="auth-input" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="0812xxxx" />
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
               <div className="auth-input-wrapper">
-                <label className="auth-input-label">Provinsi</label>
+                <label htmlFor="address-province" className="auth-input-label">Provinsi</label>
                 <input 
+                  id="address-province"
                   className="auth-input" 
                   value={formData.province} 
                   onChange={e => {
@@ -214,8 +237,9 @@ export function ProfileAddressView({
                 />
               </div>
               <div className="auth-input-wrapper">
-                <label className="auth-input-label">Kota / Kabupaten</label>
+                <label htmlFor="address-city" className="auth-input-label">Kota / Kabupaten</label>
                 <input 
+                  id="address-city"
                   className="auth-input" 
                   value={formData.city} 
                   onChange={e => {
@@ -229,8 +253,9 @@ export function ProfileAddressView({
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
               <div className="auth-input-wrapper">
-                <label className="auth-input-label">Kecamatan</label>
+                <label htmlFor="address-district" className="auth-input-label">Kecamatan</label>
                 <input 
+                  id="address-district"
                   className="auth-input" 
                   value={formData.district} 
                   onChange={e => {
@@ -241,14 +266,14 @@ export function ProfileAddressView({
                 />
               </div>
               <div className="auth-input-wrapper">
-                <label className="auth-input-label">Kode Pos</label>
-                <input className="auth-input" value={formData.postalCode} onChange={e => setFormData({...formData, postalCode: e.target.value})} placeholder="40132" />
+                <label htmlFor="address-postal" className="auth-input-label">Kode Pos</label>
+                <input id="address-postal" className="auth-input" value={formData.postalCode} onChange={e => setFormData({...formData, postalCode: e.target.value})} placeholder="40132" />
               </div>
             </div>
 
             <div className="auth-input-wrapper" style={{ marginBottom: "1rem" }}>
-              <label className="auth-input-label">Alamat Lengkap (Nama Jalan, No. Rumah, dll)</label>
-              <textarea className="auth-input" rows={2} value={formData.line1} onChange={e => setFormData({...formData, line1: e.target.value})} placeholder="Jl. Merdeka No. 123" />
+              <label htmlFor="address-line1" className="auth-input-label">Alamat Lengkap (Nama Jalan, No. Rumah, dll)</label>
+              <textarea id="address-line1" className="auth-input" rows={2} value={formData.line1} onChange={e => setFormData({...formData, line1: e.target.value})} placeholder="Jl. Merdeka No. 123" />
             </div>
 
             <div style={{ display: "flex", gap: "0.8rem" }}>
@@ -347,8 +372,8 @@ export function ProfilePaymentView({
         {showForm && (
           <div style={{ background: "#f9f9f9", padding: "1.5rem", borderRadius: "12px", marginBottom: "2rem", border: "1px solid #eee" }}>
             <div className="auth-input-wrapper">
-              <label className="auth-input-label">Pilih Bank</label>
-              <select className="auth-input" value={formData.label} onChange={e => setFormData({...formData, label: e.target.value})}>
+              <label htmlFor="payment-bank" className="auth-input-label">Pilih Bank</label>
+              <select id="payment-bank" className="auth-input" value={formData.label} onChange={e => setFormData({...formData, label: e.target.value})}>
                 <option value="BCA">BCA (Bank Central Asia)</option>
                 <option value="Mandiri">Mandiri</option>
                 <option value="BNI">BNI (Bank Negara Indonesia)</option>
@@ -359,13 +384,13 @@ export function ProfilePaymentView({
             </div>
             
             <div className="auth-input-wrapper">
-              <label className="auth-input-label">Nomor Rekening / HP</label>
-              <input className="auth-input" value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value})} placeholder="Masukkan nomor..." />
+              <label htmlFor="payment-account" className="auth-input-label">Nomor Rekening / HP</label>
+              <input id="payment-account" className="auth-input" value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value})} placeholder="Masukkan nomor..." />
             </div>
 
             <div className="auth-input-wrapper">
-              <label className="auth-input-label">Nama Lengkap Pemilik</label>
-              <input className="auth-input" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} placeholder="Sesuai buku tabungan" />
+              <label htmlFor="payment-name" className="auth-input-label">Nama Lengkap Pemilik</label>
+              <input id="payment-name" className="auth-input" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} placeholder="Sesuai buku tabungan" />
             </div>
 
             <button
@@ -459,8 +484,9 @@ export function ProfileSecurityView({
       <p className="profile-section-title">Ubah Password</p>
       <form onSubmit={handleSave} style={{ maxWidth: "400px" }}>
         <div className="auth-input-wrapper">
-          <label className="auth-input-label">Password Saat Ini</label>
+          <label htmlFor="security-current-password" className="auth-input-label">Password Saat Ini</label>
           <input
+            id="security-current-password"
             type="password"
             className="auth-input"
             placeholder="••••••••"
@@ -470,10 +496,12 @@ export function ProfileSecurityView({
           />
         </div>
         <div className="auth-input-wrapper">
-          <label className="auth-input-label">Password Baru</label>
+          <label htmlFor="security-new-password" className="auth-input-label">Password Baru</label>
           <input
+            id="security-new-password"
             type="password"
             className="auth-input"
+            placeholder="Minimal 6 karakter"
             required
             minLength={6}
             value={newPassword}
@@ -481,10 +509,12 @@ export function ProfileSecurityView({
           />
         </div>
         <div className="auth-input-wrapper">
-          <label className="auth-input-label">Konfirmasi Password Baru</label>
+          <label htmlFor="security-confirm-password" className="auth-input-label">Konfirmasi Password Baru</label>
           <input
+            id="security-confirm-password"
             type="password"
             className="auth-input"
+            placeholder="Minimal 6 karakter"
             required
             minLength={6}
             value={confirmPassword}
