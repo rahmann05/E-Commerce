@@ -14,11 +14,12 @@ import { useAuth } from "@/context/AuthContext";
 
 import { useEffect, useState } from "react";
 
-function getInitials(name: string): string {
-  return name
+function getInitials(name: string = ""): string {
+  const safeName = name || "U";
+  return safeName
     .split(" ")
     .slice(0, 2)
-    .map((w) => w[0])
+    .map((w) => w ? w[0] : "")
     .join("")
     .toUpperCase();
 }
@@ -47,7 +48,7 @@ export default function NavbarAuthStatus() {
       {/* Profile link with avatar */}
       <Link href="/profile" className="navbar-auth-link">
         <span className="navbar-avatar-sm">{getInitials(user.name)}</span>
-        {user.name.split(" ")[0]}
+        {(user.name || user.email.split("@")[0]).split(" ")[0]}
       </Link>
 
       {/* Logout */}

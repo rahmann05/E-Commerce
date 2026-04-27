@@ -105,7 +105,7 @@ export default function CursorTrail({ containerRef }: CursorTrailProps) {
                 mixBlendMode: "lighten",
               }}
             >
-              <Image src={`${clothing.src}?v=3`} alt="" fill style={{ objectFit: "contain" }} sizes="(max-width: 768px) 100vw, 20vw" />
+              <Image src={clothing.src} alt="" fill style={{ objectFit: "contain" }} sizes="(max-width: 768px) 100vw, 20vw" />
             </motion.div>
           );
         })}

@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { cartService } from "@/backend/services/cartService";
 
 function getAuthenticatedUserId(req: Request): string | null {
-  const userId = req.headers.get("x-user-id");
-  if (!userId) return null;
-  return userId.trim() || null;
+  const cookieHeader = req.headers.get("cookie") || "";
+  const match = cookieHeader.match(/novure_uid=([^;]+)/);
+  const userId = match ? match[1] : null;
+  return userId?.trim() || null;
 }
 
 export async function GET(req: Request) {

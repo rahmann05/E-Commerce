@@ -10,9 +10,15 @@ import { ArrowUpRight, Loader2 } from "lucide-react";
 
 interface LoginSubmitButtonProps {
   isLoading: boolean;
+  label?: string;
+  loadingLabel?: string;
 }
 
-export default function LoginSubmitButton({ isLoading }: LoginSubmitButtonProps) {
+export default function LoginSubmitButton({ 
+  isLoading, 
+  label = "Masuk", 
+  loadingLabel = "Memproses..." 
+}: LoginSubmitButtonProps) {
   return (
     <motion.button
       type="submit"
@@ -35,7 +41,7 @@ export default function LoginSubmitButton({ isLoading }: LoginSubmitButtonProps)
             style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
           >
             <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
-            Masuk...
+            {loadingLabel}
           </motion.span>
         ) : (
           <motion.span
@@ -44,7 +50,7 @@ export default function LoginSubmitButton({ isLoading }: LoginSubmitButtonProps)
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            Masuk
+            {label}
           </motion.span>
         )}
       </AnimatePresence>

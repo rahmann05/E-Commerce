@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
 import prisma from "@/backend/prisma/client";
 
-function getAuthenticatedUserId(request: Request): string | null {
-  const userId = request.headers.get("x-user-id");
-  if (!userId) return null;
-  return userId.trim() || null;
+function getAuthenticatedUserId(req: Request): string | null {
+  const cookieHeader = req.headers.get("cookie") || "";
+  const match = cookieHeader.match(/novure_uid=([^;]+)/);
+  const userId = match ? match[1] : null;
+  return userId?.trim() || null;
 }
 
 function toNumber(value: unknown): number {

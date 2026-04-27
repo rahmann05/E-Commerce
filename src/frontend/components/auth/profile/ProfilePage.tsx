@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * components/auth/profile/ProfilePage.tsx
- * Full profile page — dashboard sidebar layout.
- */
-
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -27,15 +22,7 @@ type TabId = "overview" | "orders" | "wishlist" | "reviews" | "address" | "payme
 
 function toTab(value: string | null): TabId {
   const allowed: TabId[] = [
-    "overview",
-    "orders",
-    "wishlist",
-    "reviews",
-    "address",
-    "payment",
-    "vouchers",
-    "security",
-    "notifications",
+    "overview", "orders", "wishlist", "reviews", "address", "payment", "vouchers", "security", "notifications"
   ];
   return allowed.includes(value as TabId) ? (value as TabId) : "overview";
 }
@@ -60,7 +47,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [activeTab, setActiveTab] = useState<TabId>(() => toTab(searchParams.get("tab")));
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(toTab(tab));
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -68,35 +60,25 @@ export default function ProfilePage() {
     }
   }, [isLoading, user, router]);
 
-  if (!user) return null;
+  if (isLoading || !user) {
+    return (
+      <div className="pv-loading-wrap">
+        <div className="animate-spin pv-loading-spinner"></div>
+      </div>
+    );
+  }
 
-  const handleSaveProfile = (payload: { name: string; phone: string }) => {
-    updateUser({ name: payload.name, phone: payload.phone });
-  };
-
-  const handleSaveAddress = async (payload: {
-    label: string;
-    recipient: string;
-    phone: string;
-    line1: string;
-    district: string;
-    city: string;
-    province: string;
-    postalCode: string;
-  }) => {
+  const handleSaveAddress = async (payload: any) => {
     await addAddress(payload);
     updateUser({ address: `${payload.line1}, ${payload.city}` });
   };
 
-  const handleSavePayment = async (payload: { label: string; accountNumber: string; accountName: string }) => {
+  const handleSavePayment = async (payload: any) => {
     await addPaymentMethod(payload);
     updateUser({ paymentPreference: payload.label });
   };
 
-  const handleSavePassword = (payload: {
-    currentPassword: string;
-    newPassword: string;
-  }) => {
+  const handleSavePassword = (payload: any) => {
     const result = updatePassword({
       currentPassword: payload.currentPassword,
       newPassword: payload.newPassword,
@@ -107,7 +89,7 @@ export default function ProfilePage() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "overview": return <ProfileInfoCard user={user} onSave={handleSaveProfile} />;
+      case "overview": return <ProfileInfoCard />;
       case "orders": return <ProfileOrderHistory orders={orders} />;
       case "address":
         return (
@@ -146,23 +128,11 @@ export default function ProfilePage() {
     }
   };
 
-  // While checking auth state or before mounting, don't flash the UI
-  if (isLoading || !user) {
-    return (
-      <div className="pv-loading-wrap">
-        <div className="animate-spin pv-loading-spinner"></div>
-      </div>
-    );
-  }
-
   return (
     <main className="profile-page">
       <ProfileHero user={user} />
       <div className="profile-dashboard">
-        
-        {/* Sidebar Navigation */}
         <aside className="profile-sidebar">
-          
           <div className="profile-section-title mb-3">Akun</div>
           <nav className="profile-sidebar-nav mb-8">
             <button className={`profile-tab ${activeTab === "overview" ? "active" : ""}`} onClick={() => setActiveTab("overview")}>Profil Saya</button>
@@ -175,7 +145,6 @@ export default function ProfilePage() {
           <nav className="profile-sidebar-nav mb-8">
             <button className={`profile-tab ${activeTab === "orders" ? "active" : ""}`} onClick={() => setActiveTab("orders")}>Pesanan Saya</button>
             <button className={`profile-tab ${activeTab === "wishlist" ? "active" : ""}`} onClick={() => setActiveTab("wishlist")}>Daftar Keinginan</button>
-            <button className={`profile-tab ${activeTab === "reviews" ? "active" : ""}`} onClick={() => setActiveTab("reviews")}>Ulasan Saya</button>
           </nav>
 
           <div className="profile-section-title mb-3">Promo & Info</div>
@@ -189,11 +158,9 @@ export default function ProfilePage() {
           </div>
         </aside>
 
-        {/* Content Area */}
         <div className="profile-content">
           {renderContent()}
         </div>
-        
       </div>
     </main>
   );

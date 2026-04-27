@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, type FormEvent } from "react";
+import dynamic from "next/dynamic";
 import type {
   ProfileAddress,
   ProfileNotification,
@@ -11,8 +12,12 @@ import type {
 
 import { fetchProvinces, fetchRegencies, fetchDistricts } from "@/lib/api/geography";
 
-import dynamic from "next/dynamic";
 const LocationMap = dynamic(() => import("@/components/checkout/LocationMap"), { ssr: false });
+
+function formatPrice(price: number): string {
+  const finalPrice = price < 10000 ? price * 1000 : price;
+  return finalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
 
 export function ProfileAddressView({
   addresses,
@@ -540,7 +545,7 @@ export function ProfileWishlistView({
             <div>
               <div className="pv-line-title">{item.name}</div>
               <div className="pv-line-subtitle">
-                {item.category} · Rp{item.price}
+                {item.category} · Rp {formatPrice(item.price)}
               </div>
             </div>
             <button type="button" className="pill-btn" onClick={() => onRemove(item.productId)}>

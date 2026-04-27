@@ -119,7 +119,7 @@ export default function CartPage() {
                         
                         {/* Price */}
                         <div className="cart-item.product.price">
-                          Rp{formatPrice(getActualPrice(item.product.price) * item.quantity)}
+                          Rp {formatPrice(getActualPrice(item.product.price) * item.quantity)}
                         </div>
                       </div>
                     </div>
@@ -135,19 +135,19 @@ export default function CartPage() {
                 
                 <div className="cart-summary-row">
                   <span>Subtotal</span>
-                  <span>Rp{formatPrice(actualCartTotal)}</span>
+                  <span>Rp {formatPrice(actualCartTotal)}</span>
                 </div>
                 
                 <div className="cart-summary-row">
                   <span>Pengiriman</span>
-                  <span>Rp{formatPrice(shippingFee)}</span>
+                  <span>Rp {formatPrice(shippingFee)}</span>
                 </div>
 
                 <div className="cart-summary-divider" />
                 
                 <div className="cart-summary-total">
                   <span>Total</span>
-                  <span>Rp{formatPrice(finalTotal)}</span>
+                  <span>Rp {formatPrice(finalTotal)}</span>
                 </div>
 
                 <button

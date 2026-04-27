@@ -1,9 +1,5 @@
-/**
- * app/profile/page.tsx
- * Server Component shell — auth guard handled client-side in ProfilePage.
- */
-
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProfilePage from "@/components/auth/profile/ProfilePage";
@@ -15,13 +11,11 @@ export const metadata: Metadata = {
   description: "Kelola akun dan lihat riwayat pesanan Novure Anda.",
 };
 
-import { Suspense } from "react";
-
 export default function ProfileRoute() {
   return (
     <>
       <Navbar />
-      <Suspense fallback={<div>Loading profile...</div>}>
+      <Suspense fallback={<div className="pv-loading-wrap"><div className="animate-spin pv-loading-spinner"></div></div>}>
         <ProfilePage />
       </Suspense>
       <Footer />

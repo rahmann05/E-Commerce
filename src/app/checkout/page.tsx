@@ -24,7 +24,7 @@ function normalizePrice(price: number): number {
 }
 
 function formatPrice(price: number): string {
-  return `Rp${Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+  return `Rp ${Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 }
 
 function mapPaymentMethodToMidtransKey(label: string): string {

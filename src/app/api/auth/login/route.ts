@@ -25,14 +25,10 @@ export async function POST(req: Request) {
 
     let user = existingUser;
     if (!existingUser) {
-      const hashedPassword = await hashPassword(normalizedPassword);
-      user = await prisma.user.create({
-        data: {
-          email: normalizedEmail,
-          password: hashedPassword,
-          name: normalizedEmail.split("@")[0],
-        },
-      });
+      return NextResponse.json(
+        { success: false, error: "Email belum terdaftar. Silakan buat akun baru." },
+        { status: 401 }
+      );
     } else {
       if (!existingUser.password) {
         const hashedPassword = await hashPassword(normalizedPassword);

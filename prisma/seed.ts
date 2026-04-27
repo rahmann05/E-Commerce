@@ -10,137 +10,225 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const LETTER_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const WAIST_SIZES = ["W28", "W30", "W32", "W34", "W36"];
 
 const PRODUCTS_TO_SEED = [
+  // --- TEES ---
   {
-    name: "Boxy Sage Green Tee",
-    description: "Ultra-soft modal blend with a relaxed boxy silhouette. Perfect for layering or wearing solo.",
+    name: "White Boxy Tee",
+    description: "Heavyweight 280gsm cotton with a perfect boxy silhouette. Pre-shrunk and enzyme washed for a soft feel.",
     category: "tees",
     price: 250,
     rating: 5,
     sizes: "S - XXL",
-    image: "/images/model1.jpg",
-    colors: ["#8da38a", "#e8e8e8", "#333333"],
+    image: "/images/tees1.png",
+    colors: ["#e8e8e8"],
   },
   {
-    name: "Charcoal Heavyweight Tee",
-    description: "Dense 280gsm cotton for a structured look that keeps its shape wash after wash.",
-    category: "tees",
-    price: 350,
-    rating: 4,
-    sizes: "M - XXL",
-    image: "/images/model2.jpg",
-    colors: ["#333333", "#7a7a7a"],
-  },
-  {
-    name: "Classic White Boxy Fit",
-    description: "The essential wardrobe anchor. Enzyme-washed for instant softness.",
-    category: "tees",
-    price: 500,
-    rating: 5,
-    sizes: "S - L",
-    image: "/images/model3.jpg",
-    colors: ["#e8e8e8", "#f5f5f3"],
-  },
-  {
-    name: "Earth Brown Loose Tee",
-    description: "Earthy pigment-dyed cotton that deepens in colour with every wash.",
+    name: "Earth Brown Boxy Tee",
+    description: "Earthy brown pigment-dyed tee. Features dropped shoulders and a slightly cropped length.",
     category: "tees",
     price: 280,
     rating: 4,
-    sizes: "S - XL",
+    sizes: "S - XXL",
     image: "/images/tees2.png",
-    colors: ["#6b4423", "#8d6240"],
+    colors: ["#6b4423"],
+  },
+  {
+    name: "Sage Green Boxy Tee",
+    description: "A calming sage green hue on our signature boxy fit. Perfect for minimalist layering.",
+    category: "tees",
+    price: 250,
+    rating: 5,
+    sizes: "S - XXL",
+    image: "/images/tees3.png",
+    colors: ["#8da38a"],
   },
   {
     name: "Vintage Grey Oversized",
-    description: "Pre-distressed for that lived-in look straight out of the box.",
+    description: "Lived-in vintage grey look. Oversized but structured, making it a versatile wardrobe staple.",
     category: "tees",
     price: 320,
     rating: 5,
     sizes: "S - XXL",
     image: "/images/tees4.png",
-    colors: ["#7a7a7a", "#555555"],
+    colors: ["#7a7a7a"],
   },
   {
+    name: "Charcoal Boxy Tee",
+    description: "Deep charcoal black. Heavyweight fabric that holds its shape wash after wash.",
+    category: "tees",
+    price: 350,
+    rating: 4,
+    sizes: "S - XXL",
+    image: "/images/tees5.png",
+    colors: ["#333333"],
+  },
+  {
+    name: "Cream Heavyweight Tee",
+    description: "Ultra-thick cream white jersey. Features a tight collar and wide sleeves for a modern look.",
+    category: "tees",
+    price: 300,
+    rating: 5,
+    sizes: "S - XXL",
+    image: "/images/tees6.png",
+    colors: ["#f5f5dc"],
+  },
+  {
+    name: "Olive Boxy Tee",
+    description: "Structured olive green tee. Minimalist design with high-density construction.",
+    category: "tees",
+    price: 250,
+    rating: 4,
+    sizes: "S - XXL",
+    image: "/images/tees7.png",
+    colors: ["#556b2f"],
+  },
+
+  // --- JEANS ---
+  {
     name: "Blue Baggy Denim",
-    description: "Japanese selvedge denim with a relaxed baggy cut. Sanforized for minimal shrinkage.",
+    description: "Classic blue wash with a relaxed wide leg. Japanese selvedge denim inspired fit.",
     category: "jeans",
     price: 890,
     rating: 5,
     sizes: "W28 - W36",
     image: "/images/jeans1.png",
-    colors: ["#2b4c7e", "#5b84b1"],
+    colors: ["#2b4c7e"],
   },
   {
     name: "Washed Black Denim",
-    description: "Raw black denim pre-washed to a rich, deep fade. Tapered leg, full comfort waistband.",
+    description: "Faded black denim with a soft, broken-in feel. Wide leg silhouette for maximum comfort.",
     category: "jeans",
     price: 950,
     rating: 4,
-    sizes: "W28 - W34",
+    sizes: "W28 - W36",
     image: "/images/jeans2.png",
-    colors: ["#1a1a1a", "#2d2d2d"],
+    colors: ["#1a1a1a"],
   },
   {
     name: "Light Wash Straight Denim",
-    description: "Cloud-washed straight leg for an easy, effortless everyday look.",
+    description: "Bright light wash denim. Features a straight but wide cut that stacks perfectly over sneakers.",
     category: "jeans",
     price: 820,
     rating: 5,
-    sizes: "W30 - W36",
+    sizes: "W28 - W36",
     image: "/images/jeans3.png",
-    colors: ["#5b84b1", "#8aaed4"],
+    colors: ["#5b84b1"],
   },
   {
-    name: "Canvas Field Jacket",
-    description: "Rugged canvas outer with a warm flannel lining. Built for the elements, designed for the city.",
+    name: "Deep Indigo Wide Jeans",
+    description: "Raw-look deep indigo denim. Heavyweight and structured for a bold silhouette.",
+    category: "jeans",
+    price: 920,
+    rating: 5,
+    sizes: "W28 - W36",
+    image: "/images/jeans4.png",
+    colors: ["#16213e"],
+  },
+  {
+    name: "Faded Black Wide Jeans",
+    description: "Heavily washed black denim. Wide leg with a slight taper for a modern aesthetic.",
+    category: "jeans",
+    price: 880,
+    rating: 4,
+    sizes: "W28 - W36",
+    image: "/images/jeans5.png",
+    colors: ["#2d2d2d"],
+  },
+  {
+    name: "Raw Selvedge Baggy",
+    description: "Premium raw selvedge denim. Baggy fit that develops unique fades with wear.",
+    category: "jeans",
+    price: 1200,
+    rating: 5,
+    sizes: "W28 - W36",
+    image: "/images/jeans6.png",
+    colors: ["#0f172a"],
+  },
+
+  // --- OUTERWEAR ---
+  {
+    name: "Black Canvas Field Jacket",
+    description: "Rugged canvas outer with a warm lining. Cropped and boxy for a tactical aesthetic.",
     category: "outerwear",
     price: 1250,
     rating: 5,
     sizes: "S - XXL",
-    image: "/images/model4.png",
-    colors: ["#555555", "#333333"],
+    image: "/images/outerwear1.png",
+    colors: ["#1a1a1a"],
   },
   {
-    name: "Everyday Essential Beanie",
-    description: "Soft merino wool blend that provides warmth without the itch. Minimalist branding.",
-    category: "accessories",
-    price: 150,
+    name: "Light Grey Boxy Puffer",
+    description: "Warm but lightweight puffer jacket. Features a high collar and adjustable hem.",
+    category: "outerwear",
+    price: 1450,
     rating: 4,
-    sizes: "One Size",
-    image: "/images/tees5.png",
-    colors: ["#333333", "#7a7a7a"],
+    sizes: "S - XXL",
+    image: "/images/outerwear2.png",
+    colors: ["#d1d5db"],
   },
+  {
+    name: "Charcoal Wool Overshirt",
+    description: "Heavyweight wool blend overshirt. Perfect for layering over our boxy tees.",
+    category: "outerwear",
+    price: 1100,
+    rating: 5,
+    sizes: "S - XXL",
+    image: "/images/outerwear3.png",
+    colors: ["#374151"],
+  },
+  {
+    name: "Washed Blue Denim Jacket",
+    description: "Iconic trucker style but with a boxier, shorter fit. Vintage blue wash.",
+    category: "outerwear",
+    price: 980,
+    rating: 5,
+    sizes: "S - XXL",
+    image: "/images/outerwear4.png",
+    colors: ["#4b6584"],
+  },
+  {
+    name: "Navy Boxy Bomber",
+    description: "Classic flight jacket redefined with a wider silhouette and premium hardware.",
+    category: "outerwear",
+    price: 1350,
+    rating: 5,
+    sizes: "S - XXL",
+    image: "/images/outerwear5.png",
+    colors: ["#1e3a8a"],
+  },
+
+  // --- ACCESSORIES ---
   {
     name: "Structured Twill Cap",
-    description: "Classic 6-panel construction with an adjustable leather strap. Low profile fit.",
+    description: "6-panel construction with a low profile. Adjustable strap with silver buckle.",
     category: "accessories",
     price: 190,
     rating: 5,
     sizes: "One Size",
-    image: "/images/tees3.png",
-    colors: ["#8da38a", "#e8e8e8"],
+    image: "/images/accessories1.png",
+    colors: ["#374151"],
   },
   {
-    name: "Tech Performance Parka",
-    description: "Waterproof, breathable, and built for the urban explorer. Features multiple utility pockets.",
-    category: "outerwear",
-    price: 1550,
+    name: "Minimalist Sling Bag",
+    description: "Technical nylon crossbody bag. Compact but enough for your daily essentials.",
+    category: "accessories",
+    price: 450,
     rating: 5,
-    sizes: "M - XXL",
-    image: "/images/model1.jpg",
-    colors: ["#333333", "#2b4c7e"],
+    sizes: "One Size",
+    image: "/images/accessories2.png",
+    colors: ["#1a1a1a"],
   },
   {
-    name: "Cloud-Knit Hoodie",
-    description: "Double-faced jersey knit for a weightless feel and maximum warmth. The peak of Softwear.",
-    category: "tees",
-    price: 650,
-    rating: 5,
-    sizes: "S - XXXL",
-    image: "/images/tees2.png",
-    colors: ["#6b4423", "#7a7a7a"],
+    name: "Premium Knit Beanie",
+    description: "Heavyweight wool blend knit. Provides warmth and keeps its shape.",
+    category: "accessories",
+    price: 150,
+    rating: 4,
+    sizes: "One Size",
+    image: "/images/accessories3.png",
+    colors: ["#1e3a8a"],
   },
 ];
 
@@ -167,13 +255,14 @@ function expandSizeRange(range: string): string[] {
 }
 
 function parseSizes(sizes: string): string[] {
+  if (sizes.toLowerCase() === "one size") return ["One Size"];
   if (sizes.includes(",")) return sizes.split(",").map((s) => s.trim()).filter(Boolean);
   if (sizes.includes(" - ")) return expandSizeRange(sizes);
   return [sizes.trim()].filter(Boolean);
 }
 
 async function main() {
-  console.log("🚀 Start seeding with ALL products...");
+  console.log("🚀 Start seeding with NEW product structure...");
 
   // 1. Cleanup
   console.log("🧹 Cleaning up old data...");
@@ -207,7 +296,7 @@ async function main() {
       email: "user@example.com",
       name: "Budi Santoso",
       role: "USER",
-      password: "user_password",
+      password: "user_password", // In real app, hash this!
       addresses: {
         create: {
           label: "Rumah",
@@ -226,32 +315,14 @@ async function main() {
   for (const p of PRODUCTS_TO_SEED) {
     const slug = p.name.toLowerCase().replace(/ /g, "-");
     const finalSizes = parseSizes(p.sizes);
-    const sizeStocks = finalSizes.map((_, idx) => Math.max(8, 40 - idx * 6));
-
-    if (finalSizes.length === 0) {
-      throw new Error(`Invalid seed product ${p.name}: ukuran tidak boleh kosong.`);
-    }
-
-    if (finalSizes.length !== sizeStocks.length) {
-      throw new Error(
-        `Invalid seed product ${p.name}: sizeOptions (${finalSizes.length}) != sizeStocks (${sizeStocks.length}).`
-      );
-    }
-
-    if (sizeStocks.some((n) => n < 0)) {
-      throw new Error(`Invalid seed product ${p.name}: sizeStocks tidak boleh negatif.`);
-    }
-
-    const sizeStockMap = new Map(finalSizes.map((size, idx) => [size, sizeStocks[idx]]));
-    const variantColors = p.colors.length > 0 ? p.colors : [null];
-    const variantRows = variantColors.flatMap((color) =>
-      finalSizes.map((size) => ({
-        size,
-        color,
-        stock: sizeStockMap.get(size) ?? 20,
-      }))
-    );
+    const sizeStocks = finalSizes.map(() => Math.floor(Math.random() * 50) + 10); // Random stock between 10-60
     const totalStock = sizeStocks.reduce((sum, n) => sum + n, 0);
+
+    const variantRows = finalSizes.map((size, idx) => ({
+      size,
+      color: p.colors[0], // Single color per product as requested
+      stock: sizeStocks[idx],
+    }));
 
     await prisma.product.create({
       data: {
@@ -271,9 +342,9 @@ async function main() {
         variants: {
           create: variantRows,
         }
-      }
+      } as any
     });
-    console.log(`Created: ${p.name}`);
+    console.log(`Created: ${p.name} with ${finalSizes.length} variants.`);
   }
 
   // 5. Create Vouchers

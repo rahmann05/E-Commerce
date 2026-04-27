@@ -9,10 +9,10 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 import LoginInput from "./LoginInput";
 import LoginErrorMessage from "./LoginErrorMessage";
 import LoginSubmitButton from "./LoginSubmitButton";
-import LoginDemoHint from "./LoginDemoHint";
 
 interface LoginFormProps {
   redirectTo: string;
@@ -93,18 +93,14 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
         <LoginSubmitButton isLoading={isLoading} />
       </form>
 
-      {/* Divider */}
       <motion.div
         className="login-divider"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.8 }}
       >
-        atau
+        Belum punya akun? <Link href="/register" style={{ textDecoration: "underline", color: "#111" }}>Buat Akun Baru</Link>
       </motion.div>
-
-      {/* Demo hint */}
-      <LoginDemoHint />
     </div>
   );
 }

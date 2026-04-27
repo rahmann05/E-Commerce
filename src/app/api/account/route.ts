@@ -8,9 +8,12 @@ function normalizePrice(price: unknown): number {
 }
 
 function getAuthenticatedUserId(req: Request): string | null {
-  const userId = req.headers.get("x-user-id");
-  if (!userId) return null;
-  return userId.trim() || null;
+  // In Next.js App Router, we can get cookies from the request object headers
+  // or use the specialized NextRequest if we cast it.
+  const cookieHeader = req.headers.get("cookie") || "";
+  const match = cookieHeader.match(/novure_uid=([^;]+)/);
+  const userId = match ? match[1] : null;
+  return userId?.trim() || null;
 }
 
 function ensureString(value: unknown): string {
