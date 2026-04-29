@@ -77,6 +77,7 @@ export default function ReviewModal({ productId, orderId, productName, productIm
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
                     onClick={() => setRating(star)}
+                    aria-label={`Beri nilai ${star} bintang`}
                   >
                     <Star
                       size={28}
