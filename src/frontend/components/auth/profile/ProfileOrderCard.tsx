@@ -26,6 +26,11 @@ const STATUS_LABELS: Record<MockOrder["status"], string> = {
   shipped: "Dikirim",
   awaiting_payment: "Menunggu Pembayaran",
   cancelled: "Dibatalkan",
+  DELIVERED: "Terkirim",
+  PROCESSING: "Diproses",
+  SHIPPED: "Dikirim",
+  AWAITING_PAYMENT: "Menunggu Pembayaran",
+  CANCELLED: "Dibatalkan",
 };
 
 interface ProfileOrderCardProps {
